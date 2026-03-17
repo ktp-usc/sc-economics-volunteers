@@ -9,7 +9,7 @@ const navItems = [
     { label: "Admin",                 href: "/admin"   },
 ];
 
-export default function Header(): Element {
+export default function Header(): React.JSX.Element {
     const pathname = usePathname();
 
     return (
