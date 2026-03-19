@@ -7,6 +7,7 @@ const navItems = [
     { label: "Apply",                 href: "/"        },
     { label: "Volunteer Portal",      href: "/portal"  },
     { label: "Admin",                 href: "/admin"   },
+    { label: "Login", href: "/login" }
 ];
 
 export default function Header(): React.JSX.Element {
@@ -15,7 +16,7 @@ export default function Header(): React.JSX.Element {
     return (
         <header
             className="text-white shadow-lg sticky top-0 z-50"
-            style={{ backgroundColor: "#003366" }}
+            style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}
         >
             <div className="mx-auto px-6 flex items-center justify-between h-[70px]">
                 {/* Logo */}
