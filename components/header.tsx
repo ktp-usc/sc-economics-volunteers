@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useNavigate } from "@/context/navigation";
 
 const navItems = [
+    { label: "Home",            href: "/"       },
     { label: "Apply",            href: "/"       },
     { label: "Volunteer Portal", href: "/portal" },
     { label: "Admin",            href: "/admin"  },
