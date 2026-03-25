@@ -295,7 +295,7 @@ export default function SignUpModalTestPage() {
           font-family: 'DM Sans', sans-serif;
           font-size: 0.95rem;
           font-weight: 600;
-          cursor: pointer;
+          
           transition: background 0.18s, transform 0.12s;
         }
         .open-btn:hover { background: #0f2540; transform: translateY(-1px); }
@@ -349,7 +349,7 @@ export default function SignUpModalTestPage() {
           border: none; border-radius: 50%;
           width: 32px; height: 32px;
           color: white; font-size: 1.1rem;
-          cursor: pointer; display: flex; align-items: center; justify-content: center;
+          display: flex; align-items: center; justify-content: center;
           transition: background 0.15s;
         }
         .modal-close:hover { background: rgba(255,255,255,0.25); }
@@ -405,7 +405,6 @@ export default function SignUpModalTestPage() {
           color: #1e293b;
           background: white;
           outline: none;
-          cursor: pointer;
           transition: border-color 0.15s;
           width: 100%;
           appearance: none;
@@ -419,7 +418,7 @@ export default function SignUpModalTestPage() {
         .radio-group { display: flex; flex-direction: column; gap: 9px; }
         .radio-label {
           display: flex; align-items: center; gap: 10px;
-          font-size: 0.875rem; color: #334155; cursor: pointer;
+          font-size: 0.875rem; color: #334155; 
           padding: 11px 14px;
           border: 1.5px solid #e2e8f0;
           border-radius: 10px;
@@ -453,7 +452,6 @@ export default function SignUpModalTestPage() {
           font-family: 'DM Sans', sans-serif;
           font-size: 0.95rem;
           font-weight: 600;
-          cursor: pointer;
           transition: background 0.18s, transform 0.12s;
           width: 100%;
           margin-top: 4px;
@@ -480,7 +478,6 @@ export default function SignUpModalTestPage() {
           padding: 13px 32px;
           font-family: 'DM Sans', sans-serif;
           font-size: 0.9rem; font-weight: 600;
-          cursor: pointer;
           transition: background 0.18s;
         }
         .success-close:hover { background: #0f2540; }
