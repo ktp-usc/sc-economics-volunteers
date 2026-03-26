@@ -7,6 +7,10 @@ import {
     VolunteerEvent, EventType, AgeGroup, Expertise, City, formatDate,
 } from "@/lib/types";
 
+// ── TODO: replace with real auth once authentication is implemented ─────────
+const isAuthenticated = true; // toggle to false to test guest view
+// ───────────────────────────────────────────────────────────────────────────
+
 // ── Badge colour maps ──────────────────────────────────────────────────────
 
 const TYPE_COLORS: Record<EventType, string> = {
@@ -48,7 +52,6 @@ const selectCls =
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function EventsPage() {
-    // Prevent SSR/localStorage hydration mismatch
     const [mounted, setMounted] = useState(false);
     useEffect(() => setMounted(true), []);
 
@@ -56,8 +59,8 @@ export default function EventsPage() {
     const signedUpIds = useEventsStore((s) => s.signedUpIds);
     const signUp      = useEventsStore((s) => s.signUp);
 
-    const [filters, setFilters]         = useState<Filters>(INITIAL_FILTERS);
-    const [signUpEvent, setSignUpEvent] = useState<VolunteerEvent | null>(null);
+    const [filters, setFilters]             = useState<Filters>(INITIAL_FILTERS);
+    const [signUpEvent, setSignUpEvent]     = useState<VolunteerEvent | null>(null);
     const [justConfirmed, setJustConfirmed] = useState(false);
 
     const set = <K extends keyof Filters>(k: K, v: Filters[K]) =>
@@ -235,14 +238,14 @@ export default function EventsPage() {
                                                     isSignedUp
                                                         ? "bg-white/90 text-green-700"
                                                         : isFull
-                                                        ? "bg-black/30 text-white"
-                                                        : "bg-white/20 text-white"
+                                                            ? "bg-black/30 text-white"
+                                                            : "bg-white/20 text-white"
                                                 }`}>
                                                     {isSignedUp
                                                         ? "✓ Signed Up"
                                                         : isFull
-                                                        ? "Full"
-                                                        : `${remaining} spot${remaining !== 1 ? "s" : ""} left`}
+                                                            ? "Full"
+                                                            : `${remaining} spot${remaining !== 1 ? "s" : ""} left`}
                                                 </div>
                                             </div>
 
@@ -283,20 +286,30 @@ export default function EventsPage() {
                                                     {event.description}
                                                 </p>
 
-                                                <button
-                                                    onClick={() => !isFull && !isSignedUp && setSignUpEvent(event)}
-                                                    disabled={isFull || isSignedUp}
-                                                    className={`w-full py-2.5 rounded-lg text-sm font-bold transition ${
-                                                        isSignedUp
-                                                            ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
-                                                            : isFull
-                                                            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                            : "text-white hover:opacity-90"
-                                                    }`}
-                                                    style={!isFull && !isSignedUp ? { backgroundColor: "#003366" } : undefined}
-                                                >
-                                                    {isSignedUp ? "✓ Signed Up" : isFull ? "Event Full" : "Sign Up"}
-                                                </button>
+                                                {/* ── Sign Up / Guest CTA ── */}
+                                                {isAuthenticated ? (
+                                                    <button
+                                                        onClick={() => !isFull && !isSignedUp && setSignUpEvent(event)}
+                                                        disabled={isFull || isSignedUp}
+                                                        className={`w-full py-2.5 rounded-lg text-sm font-bold transition ${
+                                                            isSignedUp
+                                                                ? "bg-green-50 text-green-700 border border-green-200 cursor-default"
+                                                                : isFull
+                                                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                                    : "text-white hover:opacity-90"
+                                                        }`}
+                                                        style={!isFull && !isSignedUp ? { backgroundColor: "#003366" } : undefined}
+                                                    >
+                                                        {isSignedUp ? "✓ Signed Up" : isFull ? "Event Full" : "Sign Up"}
+                                                    </button>
+                                                ) : (
+                                                    <p className="text-center text-xs text-gray-400 pt-1">
+                                                        <a href="/login" className="text-blue-600 hover:underline font-medium">
+                                                            Sign in
+                                                        </a>{" "}
+                                                        to sign up for this event
+                                                    </p>
+                                                )}
                                             </div>
                                         </div>
                                     );
