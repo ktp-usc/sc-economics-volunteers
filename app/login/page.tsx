@@ -1,9 +1,11 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useNavigate } from "@/context/navigation";
 import { authClient } from "@/lib/auth/client";
 import { signInWithEmail, signUpWithEmail } from "./actions";
+
+// ── Icon components ───────────────────────────────────────────────────────
 
 const EyeIcon = () => (
     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
@@ -27,11 +29,14 @@ function Divider() {
     );
 }
 
+// ── Main page ─────────────────────────────────────────────────────────────
+
 export default function LoginPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<"login" | "register">("login");
     const [showPassword, setShowPassword] = useState(false);
 
+    // Redirect away if already logged in
     const { data: session } = authClient.useSession();
     useEffect(() => {
         if (session?.user) navigate("/");
@@ -40,19 +45,26 @@ export default function LoginPage() {
     const [signInState, signInAction, signInPending] = useActionState(signInWithEmail, null);
     const [signUpState, signUpAction, signUpPending] = useActionState(signUpWithEmail, null);
 
-    const formAction  = mode === "login" ? signInAction : signUpAction;
-    const error       = mode === "login" ? signInState?.error : signUpState?.error;
-    const isPending   = mode === "login" ? signInPending : signUpPending;
+    const formAction = mode === "login" ? signInAction : signUpAction;
+    const error = mode === "login" ? signInState?.error : signUpState?.error;
+    const isPending = mode === "login" ? signInPending : signUpPending;
 
     const inputCls =
         "w-full px-3.5 py-2.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-900 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition";
 
     return (
-        <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: "#f1f5f9" }}>
+        <div
+            className="min-h-screen flex items-center justify-center px-4 py-12"
+            style={{ background: "#f1f5f9" }}
+        >
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-                    <div className="px-8 py-7 text-white" style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}>
+                    {/* Top banner */}
+                    <div
+                        className="px-8 py-7 text-white"
+                        style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}
+                    >
                         <div className="flex items-center gap-3 mb-4">
                             <img src="/SC-Econ-logo.png" alt="SC Economics" className="h-10 w-auto" />
                         </div>
@@ -66,8 +78,10 @@ export default function LoginPage() {
                         </p>
                     </div>
 
+                    {/* Body */}
                     <div className="px-8 py-7">
 
+                        {/* Mode toggle */}
                         <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
                             {(["login", "register"] as const).map((m) => (
                                 <button
@@ -75,9 +89,9 @@ export default function LoginPage() {
                                     onClick={() => setMode(m)}
                                     className="flex-1 py-2 rounded-md text-sm font-semibold transition-all"
                                     style={{
-                                        background:  mode === m ? "#ffffff" : "transparent",
-                                        color:       mode === m ? "#111827" : "#6b7280",
-                                        boxShadow:   mode === m ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                                        background: mode === m ? "#ffffff" : "transparent",
+                                        color: mode === m ? "#111827" : "#6b7280",
+                                        boxShadow: mode === m ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                                     }}
                                 >
                                     {m === "login" ? "Sign In" : "Register"}
@@ -85,8 +99,24 @@ export default function LoginPage() {
                             ))}
                         </div>
 
+                        {/* Google OAuth */}
+                        <button
+                            type="button"
+                            onClick={() => authClient.signIn.social({ provider: "google", callbackURL: "/" })}
+                            className="w-full flex items-center justify-center gap-3 px-4 py-2.5 rounded-lg border border-gray-200 bg-white text-gray-700 text-sm font-semibold hover:bg-gray-50 transition"
+                        >
+                            <svg width="18" height="18" viewBox="0 0 48 48">
+                                <path fill="#EA4335" d="M24 9.5c3.14 0 5.95 1.08 8.17 2.85l6.08-6.08C34.46 3.39 29.5 1.5 24 1.5 14.82 1.5 6.98 6.97 3.24 14.82l7.08 5.5C12.13 14.11 17.57 9.5 24 9.5z"/>
+                                <path fill="#4285F4" d="M46.5 24c0-1.64-.15-3.22-.42-4.75H24v9h12.68c-.55 2.97-2.18 5.48-4.63 7.17l7.18 5.57C43.44 37.12 46.5 31 46.5 24z"/>
+                                <path fill="#FBBC05" d="M10.32 28.68A14.5 14.5 0 0 1 9.5 24c0-1.63.28-3.21.82-4.68l-7.08-5.5A22.47 22.47 0 0 0 1.5 24c0 3.61.87 7.02 2.42 10.02l6.4-5.34z"/>
+                                <path fill="#34A853" d="M24 46.5c5.5 0 10.12-1.82 13.5-4.95l-7.18-5.57c-1.88 1.26-4.28 2.02-6.32 2.02-6.43 0-11.87-4.61-13.68-10.82l-6.4 5.34C6.98 41.03 14.82 46.5 24 46.5z"/>
+                            </svg>
+                            Continue with Google
+                        </button>
+
                         <Divider />
 
+                        {/* Error banner */}
                         {error && (
                             <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
                                 {error}
@@ -94,16 +124,16 @@ export default function LoginPage() {
                         )}
 
                         <form action={formAction}>
+
                             <div className="flex flex-col gap-4">
 
-                                {/* FIX #3 — added id and htmlFor throughout */}
+                                {/* Name field — only shown on register */}
                                 {mode === "register" && (
                                     <div>
-                                        <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-1.5">
+                                        <label className="block text-sm font-semibold text-gray-900 mb-1.5">
                                             Full Name
                                         </label>
                                         <input
-                                            id="name"
                                             className={inputCls}
                                             name="name"
                                             type="text"
@@ -113,12 +143,12 @@ export default function LoginPage() {
                                     </div>
                                 )}
 
+                                {/* Email */}
                                 <div>
-                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-1.5">
+                                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
                                         Email Address *
                                     </label>
                                     <input
-                                        id="email"
                                         className={inputCls}
                                         name="email"
                                         type="email"
@@ -128,13 +158,13 @@ export default function LoginPage() {
                                     />
                                 </div>
 
+                                {/* Password */}
                                 <div>
-                                    <label htmlFor="password" className="block text-sm font-semibold text-gray-900 mb-1.5">
+                                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
                                         Password *
                                     </label>
                                     <div className="relative">
                                         <input
-                                            id="password"
                                             className={inputCls + " pr-10"}
                                             name="password"
                                             type={showPassword ? "text" : "password"}
@@ -157,6 +187,7 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
+                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={isPending}
@@ -169,6 +200,7 @@ export default function LoginPage() {
                             </button>
                         </form>
 
+                        {/* Switch mode */}
                         <p className="text-center text-xs text-gray-500 mt-5">
                             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
                             <button
