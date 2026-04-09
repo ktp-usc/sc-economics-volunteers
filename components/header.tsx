@@ -1,22 +1,32 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useNavigate } from "@/context/navigation";
 import { authClient } from "@/lib/auth/client";
 import { LogOut } from "lucide-react";
 
-/**
- * Public nav items — always visible regardless of auth state.
- * Protected pages (Apply, Events, Portal, Admin) are still linked
- * but the middleware will redirect to /login if the user isn't
- * authenticated, so we don't need to hide them here.
- */
-const navItems = [
+interface Me {
+    email: string;
+    name: string | null;
+    role: string;
+}
+
+const VOLUNTEER_NAV = [
     { label: "Home",             href: "/" },
     { label: "Apply",            href: "/volunteer" },
     { label: "Events",           href: "/events" },
     { label: "Volunteer Portal", href: "/portal" },
-    { label: "Admin",            href: "/admin" },
+];
+
+const ADMIN_EXTRA = { label: "Admin", href: "/admin" };
+
+// When not logged in, Apply points directly to /login (auth required to apply).
+// This prevents the /volunteer → /login → /volunteer redirect loop that causes
+// a blank page when the user clicks Apply a second time from the login page.
+const PUBLIC_NAV = [
+    { label: "Home",  href: "/" },
+    { label: "Apply", href: "/login" },
 ];
 
 export default function Header(): React.JSX.Element {
@@ -49,14 +59,11 @@ export default function Header(): React.JSX.Element {
             : VOLUNTEER_NAV
         : PUBLIC_NAV;
 
-    /**
-     * Signs the user out via the Neon Auth client, then navigates
-     * to the home page. The fetchOptions callback lets us run
-     * navigation logic after the sign-out response completes.
-     */
     const handleSignOut = async () => {
         await authClient.signOut();
         navigate("/");
+        // pathname change caused by navigate() will re-trigger the useEffect
+        // above, which will call /api/me → 401 → me=null → header resets.
     };
 
     return (
@@ -79,6 +86,8 @@ export default function Header(): React.JSX.Element {
                     {navItems.map(({ label, href }) => (
                         <button
                             key={href}
+                            // Guard prevents triggering a fade-out when already
+                            // on this page (which would leave the page blank).
                             onClick={() => { if (pathname !== href) navigate(href); }}
                             className="px-4 py-2 rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
                             style={{
@@ -109,26 +118,14 @@ export default function Header(): React.JSX.Element {
                                 </div>
                             ) : (
                                 <button
-                                    onClick={handleSignOut}
-                                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium hover:bg-white/10 transition-colors"
-                                    title="Sign out"
+                                    onClick={() => { if (pathname !== "/login") navigate("/login"); }}
+                                    className="px-4 py-2 rounded-lg text-sm font-semibold bg-white/15 hover:bg-white/25 transition-colors border border-white/30"
                                 >
-                                    <LogOut className="w-4 h-4" />
-                                    <span className="hidden md:inline">Sign Out</span>
+                                    Login
                                 </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => { if (pathname !== "/login") navigate("/login"); }}
-                                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                style={{
-                                    backgroundColor: pathname === "/login" ? "#1d4ed8" : "transparent",
-                                }}
-                            >
-                                Login
-                            </button>
-                        )
-                    )}
+                            )
+                        )}
+                    </div>
                 </nav>
             </div>
         </header>
