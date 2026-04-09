@@ -1,11 +1,9 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useNavigate } from "@/context/navigation";
 import { authClient } from "@/lib/auth/client";
 import { signInWithEmail, signUpWithEmail } from "./actions";
-
-// ── Icon components ───────────────────────────────────────────────────────
 
 const EyeIcon = () => (
     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" xmlns="http://www.w3.org/2000/svg">
@@ -29,48 +27,32 @@ function Divider() {
     );
 }
 
-// ── Main page ─────────────────────────────────────────────────────────────
-
 export default function LoginPage() {
     const navigate = useNavigate();
     const [mode, setMode] = useState<"login" | "register">("login");
     const [showPassword, setShowPassword] = useState(false);
 
-    // Redirect away if already logged in
     const { data: session } = authClient.useSession();
     useEffect(() => {
         if (session?.user) navigate("/");
     }, [session, navigate]);
 
-    /**
-     * useActionState ties a server action to form state.
-     * `state` holds the latest { error } returned by the action;
-     * `isPending` is true while the server action is in-flight.
-     */
     const [signInState, signInAction, signInPending] = useActionState(signInWithEmail, null);
     const [signUpState, signUpAction, signUpPending] = useActionState(signUpWithEmail, null);
 
-    // Pick the right action & state based on mode
-    const formAction = mode === "login" ? signInAction : signUpAction;
-    const error = mode === "login" ? signInState?.error : signUpState?.error;
-    const isPending = mode === "login" ? signInPending : signUpPending;
+    const formAction  = mode === "login" ? signInAction : signUpAction;
+    const error       = mode === "login" ? signInState?.error : signUpState?.error;
+    const isPending   = mode === "login" ? signInPending : signUpPending;
 
     const inputCls =
         "w-full px-3.5 py-2.5 rounded-lg border border-gray-200 bg-gray-100 text-gray-900 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition";
 
     return (
-        <div
-            className="min-h-screen flex items-center justify-center px-4 py-12"
-            style={{ background: "#f1f5f9" }}
-        >
+        <div className="min-h-screen flex items-center justify-center px-4 py-12" style={{ background: "#f1f5f9" }}>
             <div className="w-full max-w-md">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
-                    {/* Top banner */}
-                    <div
-                        className="px-8 py-7 text-white"
-                        style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}
-                    >
+                    <div className="px-8 py-7 text-white" style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}>
                         <div className="flex items-center gap-3 mb-4">
                             <img src="/SC-Econ-logo.png" alt="SC Economics" className="h-10 w-auto" />
                         </div>
@@ -84,10 +66,8 @@ export default function LoginPage() {
                         </p>
                     </div>
 
-                    {/* Body */}
                     <div className="px-8 py-7">
 
-                        {/* Mode toggle */}
                         <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
                             {(["login", "register"] as const).map((m) => (
                                 <button
@@ -95,9 +75,9 @@ export default function LoginPage() {
                                     onClick={() => setMode(m)}
                                     className="flex-1 py-2 rounded-md text-sm font-semibold transition-all"
                                     style={{
-                                        background: mode === m ? "#ffffff" : "transparent",
-                                        color: mode === m ? "#111827" : "#6b7280",
-                                        boxShadow: mode === m ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
+                                        background:  mode === m ? "#ffffff" : "transparent",
+                                        color:       mode === m ? "#111827" : "#6b7280",
+                                        boxShadow:   mode === m ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
                                     }}
                                 >
                                     {m === "login" ? "Sign In" : "Register"}
@@ -107,28 +87,23 @@ export default function LoginPage() {
 
                         <Divider />
 
-                        {/* Error banner */}
                         {error && (
                             <div className="mb-4 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm">
                                 {error}
                             </div>
                         )}
 
-                        {/*
-                          HTML <form> with the `action` prop wired to a Server Action.
-                          useActionState handles the pending state and returned errors.
-                        */}
                         <form action={formAction}>
-
                             <div className="flex flex-col gap-4">
 
-                                {/* Name field — only shown on register */}
+                                {/* FIX #3 — added id and htmlFor throughout */}
                                 {mode === "register" && (
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                                        <label htmlFor="name" className="block text-sm font-semibold text-gray-900 mb-1.5">
                                             Full Name
                                         </label>
                                         <input
+                                            id="name"
                                             className={inputCls}
                                             name="name"
                                             type="text"
@@ -138,12 +113,12 @@ export default function LoginPage() {
                                     </div>
                                 )}
 
-                                {/* Email */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                                    <label htmlFor="email" className="block text-sm font-semibold text-gray-900 mb-1.5">
                                         Email Address *
                                     </label>
                                     <input
+                                        id="email"
                                         className={inputCls}
                                         name="email"
                                         type="email"
@@ -153,13 +128,13 @@ export default function LoginPage() {
                                     />
                                 </div>
 
-                                {/* Password */}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-900 mb-1.5">
+                                    <label htmlFor="password" className="block text-sm font-semibold text-gray-900 mb-1.5">
                                         Password *
                                     </label>
                                     <div className="relative">
                                         <input
+                                            id="password"
                                             className={inputCls + " pr-10"}
                                             name="password"
                                             type={showPassword ? "text" : "password"}
@@ -182,7 +157,6 @@ export default function LoginPage() {
                                 </div>
                             </div>
 
-                            {/* Submit */}
                             <button
                                 type="submit"
                                 disabled={isPending}
@@ -195,7 +169,6 @@ export default function LoginPage() {
                             </button>
                         </form>
 
-                        {/* Switch mode */}
                         <p className="text-center text-xs text-gray-500 mt-5">
                             {mode === "login" ? "Don't have an account? " : "Already have an account? "}
                             <button
