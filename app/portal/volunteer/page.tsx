@@ -55,6 +55,27 @@ interface HoursResponse {
   totalHours: number;
 }
 
+interface Achievement {
+  id: number;
+  name: string;
+  description: string;
+  icon: string;
+  criteria: string;
+}
+
+interface UserAchievement {
+  id: number;
+  achievementId: number;
+  awardedAt: string;
+  awardedBy: string;
+  achievement: Achievement;
+}
+
+interface AchievementsResponse {
+  earned: UserAchievement[];
+  all: Achievement[];
+}
+
 // -- Helpers ------------------------------------------------------------------
 
 /** Format an ISO date string to a readable format like "Sep 14, 2024" */
@@ -72,9 +93,9 @@ function getInitials(name: string | null, email: string): string {
   if (name) {
     const parts = name.trim().split(/\s+/);
     return parts
-      .slice(0, 2)
-      .map((p) => p[0]?.toUpperCase() ?? "")
-      .join("");
+        .slice(0, 2)
+        .map((p) => p[0]?.toUpperCase() ?? "")
+        .join("");
   }
   return email[0]?.toUpperCase() ?? "?";
 }
@@ -82,12 +103,12 @@ function getInitials(name: string | null, email: string): string {
 // -- Sub-components -----------------------------------------------------------
 
 function StatCard({
-  label,
-  value,
-  icon: Icon,
-  color,
-  sub,
-}: {
+                    label,
+                    value,
+                    icon: Icon,
+                    color,
+                    sub,
+                  }: {
   label: string;
   value: string;
   icon: React.ElementType;
@@ -95,19 +116,19 @@ function StatCard({
   sub: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex items-start gap-4">
-      <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-        style={{ backgroundColor: color + "15" }}
-      >
-        <Icon size={22} style={{ color }} />
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-blue-50 flex items-start gap-4">
+        <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+            style={{ backgroundColor: color + "15" }}
+        >
+          <Icon size={22} style={{ color }} />
+        </div>
+        <div>
+          <div className="text-3xl font-extrabold text-[#1e3a5f]">{value}</div>
+          <div className="text-sm font-semibold text-gray-700 mt-0.5">{label}</div>
+          <div className="text-xs text-gray-400 mt-0.5">{sub}</div>
+        </div>
       </div>
-      <div>
-        <div className="text-3xl font-extrabold text-[#1e3a5f]">{value}</div>
-        <div className="text-sm font-semibold text-gray-700 mt-0.5">{label}</div>
-        <div className="text-xs text-gray-400 mt-0.5">{sub}</div>
-      </div>
-    </div>
   );
 }
 
@@ -116,51 +137,51 @@ function SignupRow({ signup, hoursForEvent }: { signup: Signup; hoursForEvent: n
   const isUpcoming = eventDate > new Date();
 
   return (
-    <div
-      className={`flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-xl border transition-all hover:shadow-sm ${
-        isUpcoming ? "bg-blue-50/50 border-blue-100" : "bg-white border-gray-100"
-      }`}
-    >
-      <div className="shrink-0">
-        {isUpcoming ? (
-          <Circle size={18} className="text-blue-400" />
-        ) : (
-          <CheckCircle2 size={18} className="text-green-500" />
-        )}
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-wrap items-center gap-2 mb-1">
-          <span className="font-bold text-[#1e3a5f] text-sm">{signup.event.title}</span>
-          {isUpcoming && (
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
-              Upcoming
-            </span>
+      <div
+          className={`flex flex-col sm:flex-row sm:items-center gap-4 p-5 rounded-xl border transition-all hover:shadow-sm ${
+              isUpcoming ? "bg-blue-50/50 border-blue-100" : "bg-white border-gray-100"
+          }`}
+      >
+        <div className="shrink-0">
+          {isUpcoming ? (
+              <Circle size={18} className="text-blue-400" />
+          ) : (
+              <CheckCircle2 size={18} className="text-green-500" />
           )}
         </div>
-        <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="font-bold text-[#1e3a5f] text-sm">{signup.event.title}</span>
+            {isUpcoming && (
+                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+              Upcoming
+            </span>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-3 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <CalendarCheck size={11} /> {formatDate(signup.event.date)}
           </span>
-          <span className="flex items-center gap-1">
+            <span className="flex items-center gap-1">
             <MapPin size={11} /> {signup.event.venue}, {signup.event.city}
           </span>
+          </div>
+        </div>
+
+        <div className="text-center shrink-0">
+          {hoursForEvent !== null ? (
+              <>
+                <div className="text-base font-extrabold text-[#003366]">{hoursForEvent}h</div>
+                <div className="text-[10px] text-gray-400">logged</div>
+              </>
+          ) : isUpcoming ? (
+              <div className="text-xs text-blue-500 font-medium">Scheduled</div>
+          ) : (
+              <div className="text-xs text-gray-400">Pending</div>
+          )}
         </div>
       </div>
-
-      <div className="text-center shrink-0">
-        {hoursForEvent !== null ? (
-          <>
-            <div className="text-base font-extrabold text-[#003366]">{hoursForEvent}h</div>
-            <div className="text-[10px] text-gray-400">logged</div>
-          </>
-        ) : isUpcoming ? (
-          <div className="text-xs text-blue-500 font-medium">Scheduled</div>
-        ) : (
-          <div className="text-xs text-gray-400">Pending</div>
-        )}
-      </div>
-    </div>
   );
 }
 
@@ -168,11 +189,12 @@ function SignupRow({ signup, hoursForEvent }: { signup: Signup; hoursForEvent: n
 
 export default function VolunteerPortalPage() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "events">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "events" | "achievements">("overview");
 
   const [me, setMe] = useState<Me | null>(null);
   const [signups, setSignups] = useState<Signup[]>([]);
   const [hoursData, setHoursData] = useState<HoursResponse>({ hours: [], totalHours: 0 });
+  const [achievementsData, setAchievementsData] = useState<AchievementsResponse>({ earned: [], all: [] });
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch all volunteer data on mount
@@ -181,18 +203,20 @@ export default function VolunteerPortalPage() {
       fetch("/api/me").then((r) => (r.ok ? r.json() : null)),
       fetch("/api/me/signups").then((r) => (r.ok ? r.json() : [])),
       fetch("/api/me/hours").then((r) => (r.ok ? r.json() : { hours: [], totalHours: 0 })),
+      fetch("/api/me/achievements").then((r) => (r.ok ? r.json() : { earned: [], all: [] })),
     ])
-      .then(([meData, signupsData, hoursRes]) => {
-        if (!meData) {
-          navigate("/login");
-          return;
-        }
-        setMe(meData);
-        setSignups(signupsData);
-        setHoursData(hoursRes);
-      })
-      .catch(() => navigate("/login"))
-      .finally(() => setIsLoading(false));
+        .then(([meData, signupsData, hoursRes, achRes]) => {
+          if (!meData) {
+            navigate("/login");
+            return;
+          }
+          setMe(meData);
+          setSignups(signupsData);
+          setHoursData(hoursRes);
+          setAchievementsData(achRes);
+        })
+        .catch(() => navigate("/login"))
+        .finally(() => setIsLoading(false));
   }, [navigate]);
 
   // Build a lookup of eventId -> total hours for that event
@@ -209,19 +233,19 @@ export default function VolunteerPortalPage() {
   // Filter state for the events tab
   const [filter, setFilter] = useState<"all" | "upcoming" | "past">("all");
   const filteredSignups =
-    filter === "all" ? signups : filter === "upcoming" ? upcomingSignups : pastSignups;
+      filter === "all" ? signups : filter === "upcoming" ? upcomingSignups : pastSignups;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div
-            className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
-            style={{ borderColor: "#003366", borderTopColor: "transparent" }}
-          />
-          <p className="text-gray-500 text-sm font-medium">Loading your portal...</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-center">
+            <div
+                className="w-12 h-12 rounded-full border-4 border-t-transparent animate-spin mx-auto mb-4"
+                style={{ borderColor: "#003366", borderTopColor: "transparent" }}
+            />
+            <p className="text-gray-500 text-sm font-medium">Loading your portal...</p>
+          </div>
         </div>
-      </div>
     );
   }
 
@@ -229,274 +253,380 @@ export default function VolunteerPortalPage() {
 
   const initials = getInitials(me.name, me.email);
 
+  // Achievements helpers
+  const earnedIds = new Set(achievementsData.earned.map((ua) => ua.achievementId));
+  const lockedAchievements = achievementsData.all.filter((a) => !earnedIds.has(a.id));
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Banner */}
-      <div
-        className="text-white py-10 px-4 relative overflow-hidden"
-        style={{
-          background: "linear-gradient(135deg, #001f4d 0%, #003366 55%, #1d4ed8 100%)",
-        }}
-      >
+      <div className="min-h-screen bg-gray-50">
+        {/* Banner */}
         <div
-          className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
-          style={{ background: "radial-gradient(circle, #60a5fa, transparent)" }}
-        />
-        <div
-          className="absolute bottom-0 left-8 w-48 h-32 rounded-full opacity-[0.07]"
-          style={{ background: "radial-gradient(circle, #93c5fd, transparent)" }}
-        />
+            className="text-white py-10 px-4 relative overflow-hidden"
+            style={{
+              background: "linear-gradient(135deg, #001f4d 0%, #003366 55%, #1d4ed8 100%)",
+            }}
+        >
+          <div
+              className="absolute -top-16 -right-16 w-64 h-64 rounded-full opacity-10"
+              style={{ background: "radial-gradient(circle, #60a5fa, transparent)" }}
+          />
+          <div
+              className="absolute bottom-0 left-8 w-48 h-32 rounded-full opacity-[0.07]"
+              style={{ background: "radial-gradient(circle, #93c5fd, transparent)" }}
+          />
 
-        <div className="relative max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-          <div className="flex items-center gap-5">
-            <div
-              className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0"
-              style={{
-                background: "rgba(255,255,255,0.15)",
-                border: "2px solid rgba(255,255,255,0.25)",
-              }}
-            >
-              {initials}
-            </div>
-            <div>
-              <h1 className="text-2xl font-extrabold">
-                {me.name || me.email}
-              </h1>
-              <p className="text-blue-200 text-sm">{me.email}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
-        <div className="max-w-5xl mx-auto px-4 flex">
-          {(["overview", "events"] as const).map((tab) => (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className="px-6 py-4 text-sm font-semibold capitalize border-b-2 transition-all"
-              style={{
-                borderBottomColor: activeTab === tab ? "#003366" : "transparent",
-                color: activeTab === tab ? "#003366" : "#6b7280",
-              }}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Body */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* OVERVIEW TAB */}
-        {activeTab === "overview" && (
-          <div className="flex flex-col gap-8">
-            {/* Stats */}
-            <div>
-              <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Your Impact</h2>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <StatCard
-                  label="Total Hours"
-                  value={hoursData.totalHours > 0 ? hoursData.totalHours.toFixed(1) : "0"}
-                  icon={Clock}
-                  color="#003366"
-                  sub="hrs logged"
-                />
-                <StatCard
-                  label="Events Signed Up"
-                  value={String(signups.length)}
-                  icon={CalendarCheck}
-                  color="#1d4ed8"
-                  sub="events"
-                />
-              </div>
-            </div>
-
-            {/* Recent events */}
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-[#1e3a5f]">Recent Events</h2>
-                {signups.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab("events")}
-                    className="text-sm font-semibold text-[#1d4ed8] flex items-center gap-1 hover:underline"
-                  >
-                    View all <ChevronRight size={14} />
-                  </button>
-                )}
-              </div>
-              {signups.length === 0 ? (
-                <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
-                  <div className="text-4xl mb-3">📅</div>
-                  <p className="text-gray-500 font-medium mb-1">No events yet</p>
-                  <p className="text-sm text-gray-400 mb-4">
-                    Browse available events and sign up to start volunteering.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => navigate("/events")}
-                    className="inline-flex items-center gap-2 bg-[#003366] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition"
-                  >
-                    Find an Event
-                  </button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  {signups.slice(0, 3).map((s) => (
-                    <SignupRow
-                      key={s.id}
-                      signup={s}
-                      hoursForEvent={hoursByEvent.get(s.eventId) ?? null}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Upcoming commitments */}
-            {upcomingSignups.length > 0 && (
+          <div className="relative max-w-5xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
               <div
-                className="rounded-2xl p-6 text-white relative overflow-hidden"
-                style={{
-                  background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)",
-                }}
-              >
-                <div
-                  className="absolute right-0 top-0 bottom-0 w-40 opacity-10"
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-extrabold shrink-0"
                   style={{
-                    background: "radial-gradient(circle at right, #60a5fa, transparent)",
+                    background: "rgba(255,255,255,0.15)",
+                    border: "2px solid rgba(255,255,255,0.25)",
                   }}
-                />
-                <h3 className="font-bold text-lg mb-1">Upcoming Commitments</h3>
-                <p className="text-blue-200 text-sm mb-4">
-                  You have {upcomingSignups.length} upcoming event
-                  {upcomingSignups.length !== 1 ? "s" : ""} registered.
-                </p>
-                <div className="flex flex-col gap-2">
-                  {upcomingSignups.map((s) => (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between bg-white/10 border border-white/20 rounded-xl px-4 py-3"
-                    >
-                      <div>
-                        <div className="font-semibold text-sm">{s.event.title}</div>
-                        <div className="text-blue-200 text-xs mt-0.5">
-                          {formatDate(s.event.date)} - {s.event.venue}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* CTA to find events if they have none upcoming */}
-            {upcomingSignups.length === 0 && signups.length > 0 && (
-              <div
-                className="rounded-2xl p-6 text-white text-center"
-                style={{
-                  background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)",
-                }}
               >
-                <h3 className="font-bold text-lg mb-1">Find Your Next Event</h3>
-                <p className="text-blue-200 text-sm mb-4">
-                  You don&apos;t have any upcoming events. Browse available
-                  opportunities and sign up!
-                </p>
-                <button
-                  type="button"
-                  onClick={() => navigate("/events")}
-                  className="bg-white text-[#003366] font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-blue-50 transition"
-                >
-                  Browse Events
-                </button>
+                {initials}
               </div>
-            )}
+              <div>
+                <h1 className="text-2xl font-extrabold">
+                  {me.name || me.email}
+                </h1>
+                <p className="text-blue-200 text-sm">{me.email}</p>
+              </div>
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* EVENTS TAB */}
-        {activeTab === "events" && (
-          <div>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
-              <h2 className="text-lg font-bold text-[#1e3a5f]">All Events</h2>
-              <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-1">
-                {(["all", "upcoming", "past"] as const).map((f) => (
-                  <button
-                    key={f}
+        {/* Tabs */}
+        <div className="border-b border-gray-200 bg-white sticky top-0 z-10 shadow-sm">
+          <div className="max-w-5xl mx-auto px-4 flex">
+            {(["overview", "events", "achievements"] as const).map((tab) => (
+                <button
+                    key={tab}
                     type="button"
-                    onClick={() => setFilter(f)}
-                    className="px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
+                    onClick={() => setActiveTab(tab)}
+                    className="px-6 py-4 text-sm font-semibold capitalize border-b-2 transition-all"
                     style={{
-                      background: filter === f ? "#003366" : "transparent",
-                      color: filter === f ? "#fff" : "#6b7280",
+                      borderBottomColor: activeTab === tab ? "#003366" : "transparent",
+                      color: activeTab === tab ? "#003366" : "#6b7280",
                     }}
-                  >
-                    {f === "all"
-                      ? `All (${signups.length})`
-                      : f === "upcoming"
-                        ? `Upcoming (${upcomingSignups.length})`
-                        : `Past (${pastSignups.length})`}
-                  </button>
-                ))}
-              </div>
-            </div>
+                >
+                  {tab}
+                </button>
+            ))}
+          </div>
+        </div>
 
-            {/* Summary stats */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <div className="bg-white rounded-xl p-4 text-center border border-blue-50 shadow-sm">
-                <div className="text-xl font-extrabold text-[#003366]">
-                  {hoursData.totalHours > 0 ? `${hoursData.totalHours.toFixed(1)}h` : "0h"}
+        {/* Body */}
+        <div className="max-w-5xl mx-auto px-4 py-8">
+          {/* OVERVIEW TAB */}
+          {activeTab === "overview" && (
+              <div className="flex flex-col gap-8">
+                {/* Stats */}
+                <div>
+                  <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Your Impact</h2>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <StatCard
+                        label="Total Hours"
+                        value={hoursData.totalHours > 0 ? hoursData.totalHours.toFixed(1) : "0"}
+                        icon={Clock}
+                        color="#003366"
+                        sub="hrs logged"
+                    />
+                    <StatCard
+                        label="Events Signed Up"
+                        value={String(signups.length)}
+                        icon={CalendarCheck}
+                        color="#1d4ed8"
+                        sub="events"
+                    />
+                  </div>
                 </div>
-                <div className="text-[11px] text-gray-400 mt-0.5">Total Hours Logged</div>
-              </div>
-              <div className="bg-white rounded-xl p-4 text-center border border-blue-50 shadow-sm">
-                <div className="text-xl font-extrabold text-[#003366]">
-                  {pastSignups.length}
-                </div>
-                <div className="text-[11px] text-gray-400 mt-0.5">Events Completed</div>
-              </div>
-            </div>
 
-            {/* Event list */}
-            <div className="flex flex-col gap-3">
-              {filteredSignups.length === 0 ? (
-                <div className="text-center py-12 text-gray-400 text-sm">
+                {/* Recent events */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-bold text-[#1e3a5f]">Recent Events</h2>
+                    {signups.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("events")}
+                            className="text-sm font-semibold text-[#1d4ed8] flex items-center gap-1 hover:underline"
+                        >
+                          View all <ChevronRight size={14} />
+                        </button>
+                    )}
+                  </div>
                   {signups.length === 0 ? (
-                    <div>
-                      <div className="text-4xl mb-3">📅</div>
-                      <p className="text-gray-500 font-medium mb-1">No events yet</p>
-                      <p className="text-sm text-gray-400 mb-4">
-                        Sign up for your first event to get started.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => navigate("/events")}
-                        className="inline-flex items-center gap-2 bg-[#003366] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition"
-                      >
-                        Find an Event
-                      </button>
-                    </div>
+                      <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+                        <div className="text-4xl mb-3">📅</div>
+                        <p className="text-gray-500 font-medium mb-1">No events yet</p>
+                        <p className="text-sm text-gray-400 mb-4">
+                          Browse available events and sign up to start volunteering.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => navigate("/events")}
+                            className="inline-flex items-center gap-2 bg-[#003366] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition"
+                        >
+                          Find an Event
+                        </button>
+                      </div>
                   ) : (
-                    `No ${filter} events found.`
+                      <div className="flex flex-col gap-3">
+                        {signups.slice(0, 3).map((s) => (
+                            <SignupRow
+                                key={s.id}
+                                signup={s}
+                                hoursForEvent={hoursByEvent.get(s.eventId) ?? null}
+                            />
+                        ))}
+                      </div>
                   )}
                 </div>
-              ) : (
-                filteredSignups.map((s) => (
-                  <SignupRow
-                    key={s.id}
-                    signup={s}
-                    hoursForEvent={hoursByEvent.get(s.eventId) ?? null}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-        )}
+
+                {/* Earned badges preview */}
+                {achievementsData.earned.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-lg font-bold text-[#1e3a5f]">Your Badges</h2>
+                        <button
+                            type="button"
+                            onClick={() => setActiveTab("achievements")}
+                            className="text-sm font-semibold text-[#1d4ed8] flex items-center gap-1 hover:underline"
+                        >
+                          View all <ChevronRight size={14} />
+                        </button>
+                      </div>
+                      <div className="flex gap-3 flex-wrap">
+                        {achievementsData.earned.slice(0, 4).map((ua) => (
+                            <div
+                                key={ua.id}
+                                className="bg-white rounded-xl border border-blue-100 shadow-sm px-4 py-3 flex items-center gap-3"
+                            >
+                              <span className="text-2xl">{ua.achievement.icon}</span>
+                              <div>
+                                <p className="font-semibold text-[#1e3a5f] text-sm">{ua.achievement.name}</p>
+                                <p className="text-[10px] text-gray-400">
+                                  {formatDate(ua.awardedAt)}
+                                </p>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                )}
+
+                {/* Upcoming commitments */}
+                {upcomingSignups.length > 0 && (
+                    <div
+                        className="rounded-2xl p-6 text-white relative overflow-hidden"
+                        style={{
+                          background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)",
+                        }}
+                    >
+                      <div
+                          className="absolute right-0 top-0 bottom-0 w-40 opacity-10"
+                          style={{
+                            background: "radial-gradient(circle at right, #60a5fa, transparent)",
+                          }}
+                      />
+                      <h3 className="font-bold text-lg mb-1">Upcoming Commitments</h3>
+                      <p className="text-blue-200 text-sm mb-4">
+                        You have {upcomingSignups.length} upcoming event
+                        {upcomingSignups.length !== 1 ? "s" : ""} registered.
+                      </p>
+                      <div className="flex flex-col gap-2">
+                        {upcomingSignups.map((s) => (
+                            <div
+                                key={s.id}
+                                className="flex items-center justify-between bg-white/10 border border-white/20 rounded-xl px-4 py-3"
+                            >
+                              <div>
+                                <div className="font-semibold text-sm">{s.event.title}</div>
+                                <div className="text-blue-200 text-xs mt-0.5">
+                                  {formatDate(s.event.date)} - {s.event.venue}
+                                </div>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                )}
+
+                {/* CTA to find events if they have none upcoming */}
+                {upcomingSignups.length === 0 && signups.length > 0 && (
+                    <div
+                        className="rounded-2xl p-6 text-white text-center"
+                        style={{
+                          background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)",
+                        }}
+                    >
+                      <h3 className="font-bold text-lg mb-1">Find Your Next Event</h3>
+                      <p className="text-blue-200 text-sm mb-4">
+                        You don&apos;t have any upcoming events. Browse available
+                        opportunities and sign up!
+                      </p>
+                      <button
+                          type="button"
+                          onClick={() => navigate("/events")}
+                          className="bg-white text-[#003366] font-bold px-6 py-2.5 rounded-xl text-sm hover:bg-blue-50 transition"
+                      >
+                        Browse Events
+                      </button>
+                    </div>
+                )}
+              </div>
+          )}
+
+          {/* EVENTS TAB */}
+          {activeTab === "events" && (
+              <div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                  <h2 className="text-lg font-bold text-[#1e3a5f]">All Events</h2>
+                  <div className="flex bg-white border border-gray-200 rounded-xl p-1 gap-1">
+                    {(["all", "upcoming", "past"] as const).map((f) => (
+                        <button
+                            key={f}
+                            type="button"
+                            onClick={() => setFilter(f)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold capitalize transition-all"
+                            style={{
+                              background: filter === f ? "#003366" : "transparent",
+                              color: filter === f ? "#fff" : "#6b7280",
+                            }}
+                        >
+                          {f === "all"
+                              ? `All (${signups.length})`
+                              : f === "upcoming"
+                                  ? `Upcoming (${upcomingSignups.length})`
+                                  : `Past (${pastSignups.length})`}
+                        </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Summary stats */}
+                <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="bg-white rounded-xl p-4 text-center border border-blue-50 shadow-sm">
+                    <div className="text-xl font-extrabold text-[#003366]">
+                      {hoursData.totalHours > 0 ? `${hoursData.totalHours.toFixed(1)}h` : "0h"}
+                    </div>
+                    <div className="text-[11px] text-gray-400 mt-0.5">Total Hours Logged</div>
+                  </div>
+                  <div className="bg-white rounded-xl p-4 text-center border border-blue-50 shadow-sm">
+                    <div className="text-xl font-extrabold text-[#003366]">
+                      {pastSignups.length}
+                    </div>
+                    <div className="text-[11px] text-gray-400 mt-0.5">Events Completed</div>
+                  </div>
+                </div>
+
+                {/* Event list */}
+                <div className="flex flex-col gap-3">
+                  {filteredSignups.length === 0 ? (
+                      <div className="text-center py-12 text-gray-400 text-sm">
+                        {signups.length === 0 ? (
+                            <div>
+                              <div className="text-4xl mb-3">📅</div>
+                              <p className="text-gray-500 font-medium mb-1">No events yet</p>
+                              <p className="text-sm text-gray-400 mb-4">
+                                Sign up for your first event to get started.
+                              </p>
+                              <button
+                                  type="button"
+                                  onClick={() => navigate("/events")}
+                                  className="inline-flex items-center gap-2 bg-[#003366] text-white font-bold px-5 py-2.5 rounded-xl text-sm hover:opacity-90 transition"
+                              >
+                                Find an Event
+                              </button>
+                            </div>
+                        ) : (
+                            `No ${filter} events found.`
+                        )}
+                      </div>
+                  ) : (
+                      filteredSignups.map((s) => (
+                          <SignupRow
+                              key={s.id}
+                              signup={s}
+                              hoursForEvent={hoursByEvent.get(s.eventId) ?? null}
+                          />
+                      ))
+                  )}
+                </div>
+              </div>
+          )}
+
+          {/* ACHIEVEMENTS TAB */}
+          {activeTab === "achievements" && (
+              <div className="flex flex-col gap-8">
+                {/* Earned badges */}
+                <div>
+                  <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">
+                    Your Badges ({achievementsData.earned.length})
+                  </h2>
+                  {achievementsData.earned.length === 0 ? (
+                      <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+                        <div className="text-4xl mb-3">🏅</div>
+                        <p className="text-gray-500 font-medium mb-1">No badges yet</p>
+                        <p className="text-sm text-gray-400">
+                          Keep volunteering to earn achievements!
+                        </p>
+                      </div>
+                  ) : (
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {achievementsData.earned.map((ua) => (
+                            <div
+                                key={ua.id}
+                                className="bg-white rounded-2xl border border-blue-100 shadow-sm p-5 flex items-start gap-4"
+                            >
+                              <div className="text-3xl shrink-0">{ua.achievement.icon}</div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-[#1e3a5f]">{ua.achievement.name}</p>
+                                <p className="text-xs text-gray-500 mt-0.5">{ua.achievement.description}</p>
+                                <p className="text-[10px] text-gray-400 mt-2">
+                                  Awarded {formatDate(ua.awardedAt)}
+                                </p>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                  )}
+                </div>
+
+                {/* Locked achievements */}
+                {lockedAchievements.length > 0 && (
+                    <div>
+                      <h2 className="text-lg font-bold text-[#1e3a5f] mb-4">Available Achievements</h2>
+                      <div className="grid sm:grid-cols-2 gap-4">
+                        {lockedAchievements.map((a) => (
+                            <div
+                                key={a.id}
+                                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-start gap-4 opacity-60"
+                            >
+                              <div className="text-3xl shrink-0 grayscale">{a.icon}</div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-gray-500">{a.name}</p>
+                                <p className="text-xs text-gray-400 mt-0.5">{a.description}</p>
+                                <p className="text-[10px] text-gray-400 mt-2 italic">{a.criteria}</p>
+                              </div>
+                            </div>
+                        ))}
+                      </div>
+                    </div>
+                )}
+
+                {/* Empty state if no achievements defined at all */}
+                {achievementsData.all.length === 0 && (
+                    <div className="text-center py-12 bg-white rounded-2xl border border-gray-100">
+                      <div className="text-4xl mb-3">🏆</div>
+                      <p className="text-gray-500 font-medium mb-1">No achievements available yet</p>
+                      <p className="text-sm text-gray-400">Check back soon!</p>
+                    </div>
+                )}
+              </div>
+          )}
+        </div>
       </div>
-    </div>
   );
 }
