@@ -1,9 +1,9 @@
 "use client";
 
 import { useNavigate } from "@/context/navigation";
+import { authClient } from "@/lib/auth/client";
 import { ArrowRight, Heart, CheckCircle2 } from "lucide-react";
 
-// Source: SC Economics 2024–2025 Annual Report
 const heroStats = [
     { value: "65",    label: "of 72 SC Public School Districts Served" },
     { value: "1,030", label: "Unique SC Teachers Served by Our Programs" },
@@ -11,7 +11,6 @@ const heroStats = [
     { value: "313",   label: "Professional Learning Hours Delivered" },
 ];
 
-// Source: SC Economics 2024–2025 Annual Report
 const impactStats = [
     {
         stat: "11,348",
@@ -36,6 +35,10 @@ const impactStats = [
 export default function VolunteerPage() {
     const navigate = useNavigate();
 
+    // FIX #5 — check session to decide where CTA navigates
+    const { data: session } = authClient.useSession();
+    const handleCTA = () => navigate(session?.user ? "/volunteer" : "/login");
+
     return (
         <div className="min-h-screen bg-white">
 
@@ -44,14 +47,8 @@ export default function VolunteerPage() {
                 className="relative overflow-hidden text-white"
                 style={{ background: "linear-gradient(135deg, #001f4d 0%, #003366 50%, #1d4ed8 100%)" }}
             >
-                <div
-                    className="absolute -top-24 -right-24 w-120 h-120 rounded-full opacity-10"
-                    style={{ background: "radial-gradient(circle, #60a5fa, transparent)" }}
-                />
-                <div
-                    className="absolute bottom-0 -left-16 w-[320px] h-80 rounded-full opacity-[0.07]"
-                    style={{ background: "radial-gradient(circle, #93c5fd, transparent)" }}
-                />
+                <div className="absolute -top-24 -right-24 w-120 h-120 rounded-full opacity-10" style={{ background: "radial-gradient(circle, #60a5fa, transparent)" }} />
+                <div className="absolute bottom-0 -left-16 w-[320px] h-80 rounded-full opacity-[0.07]" style={{ background: "radial-gradient(circle, #93c5fd, transparent)" }} />
 
                 <div className="relative max-w-6xl mx-auto px-6 py-24 md:py-32 grid md:grid-cols-2 gap-12 items-center">
                     <div>
@@ -68,8 +65,9 @@ export default function VolunteerPage() {
                             literacy skills to thrive — and it&apos;s powered by volunteers like you.
                         </p>
                         <div className="flex flex-wrap gap-3">
+                            {/* FIX #5 — navigate to /login if unauthenticated, /volunteer if authenticated */}
                             <button
-                                onClick={() => navigate("/volunteer")}
+                                onClick={handleCTA}
                                 className="inline-flex items-center gap-2 bg-white text-[#003366] font-bold px-7 py-3.5 rounded-xl text-base hover:bg-blue-50 transition-colors shadow-lg"
                             >
                                 Apply to Volunteer <ArrowRight size={18} />
@@ -77,13 +75,9 @@ export default function VolunteerPage() {
                         </div>
                     </div>
 
-                    {/* Stats — source: SC Economics 2024–25 Annual Report */}
                     <div className="grid grid-cols-2 gap-4">
                         {heroStats.map(({ value, label }) => (
-                            <div
-                                key={label}
-                                className="bg-white/10 border border-white/20 backdrop-blur rounded-2xl p-6 text-center"
-                            >
+                            <div key={label} className="bg-white/10 border border-white/20 backdrop-blur rounded-2xl p-6 text-center">
                                 <div className="text-4xl font-extrabold text-white mb-1">{value}</div>
                                 <div className="text-blue-200 text-sm font-medium">{label}</div>
                             </div>
@@ -108,13 +102,8 @@ export default function VolunteerPage() {
 
                     <div className="grid md:grid-cols-3 gap-6">
                         {impactStats.map(({ stat, label, detail, accent }) => (
-                            <div
-                                key={stat}
-                                className="bg-white rounded-2xl p-8 shadow-sm border border-blue-50 text-center"
-                            >
-                                <div className="text-5xl font-extrabold mb-2" style={{ color: accent }}>
-                                    {stat}
-                                </div>
+                            <div key={stat} className="bg-white rounded-2xl p-8 shadow-sm border border-blue-50 text-center">
+                                <div className="text-5xl font-extrabold mb-2" style={{ color: accent }}>{stat}</div>
                                 <div className="font-bold text-[#1e3a5f] text-sm mb-2">{label}</div>
                                 <p className="text-gray-400 text-xs leading-relaxed">{detail}</p>
                             </div>
@@ -143,10 +132,7 @@ export default function VolunteerPage() {
             >
                 <div
                     className="absolute top-0 left-0 right-0 bottom-0 opacity-10"
-                    style={{
-                        backgroundImage:
-                            "radial-gradient(circle at 20% 50%, #60a5fa 0%, transparent 60%), radial-gradient(circle at 80% 50%, #3b82f6 0%, transparent 60%)",
-                    }}
+                    style={{ backgroundImage: "radial-gradient(circle at 20% 50%, #60a5fa 0%, transparent 60%), radial-gradient(circle at 80% 50%, #3b82f6 0%, transparent 60%)" }}
                 />
                 <div className="relative max-w-3xl mx-auto px-6">
                     <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
@@ -160,8 +146,9 @@ export default function VolunteerPage() {
                         11,348 South Carolina students were reached through our programs last year.
                         Help us reach even more in 2025–26.
                     </p>
+                    {/* FIX #5 — same smart routing here */}
                     <button
-                        onClick={() => navigate("/volunteer")}
+                        onClick={handleCTA}
                         className="inline-flex items-center gap-3 bg-white text-[#003366] font-extrabold px-10 py-4 rounded-2xl text-lg hover:bg-blue-50 transition-colors shadow-2xl"
                     >
                         Start Your Application <ArrowRight size={22} />
