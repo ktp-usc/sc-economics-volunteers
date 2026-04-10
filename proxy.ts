@@ -63,12 +63,15 @@ export default async function proxy(request: NextRequest): Promise<NextResponse>
             const me = (await meRes.json()) as {
                 role: string;
                 hasApplication: boolean;
+                applicationStatus: string | null;
             };
 
-            // Users who already applied don't need the apply page.
+            // Block the apply page only if the user has a pending or approved application.
+            // Denied users are allowed to reapply.
             if (
                 matchesRoute(["/volunteer"], pathname) &&
-                me.hasApplication
+                me.hasApplication &&
+                me.applicationStatus !== "denied"
             ) {
                 return NextResponse.redirect(new URL("/portal", request.url));
             }

@@ -63,6 +63,21 @@ export async function POST(req: NextRequest) {
         );
     }
 
+    // Format validation
+    const emailStr = (email as string).trim();
+    const phoneStr = (phone as string).trim();
+    const zipStr   = (zip as string).trim();
+    const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const PHONE_RE = /^\+?[\d\s().-]{7,20}$/;
+    const ZIP_RE   = /^\d{5}(-\d{4})?$/;
+    const formatErrors: string[] = [];
+    if (!EMAIL_RE.test(emailStr)) formatErrors.push("Invalid email address");
+    if (!PHONE_RE.test(phoneStr)) formatErrors.push("Invalid phone number");
+    if (!ZIP_RE.test(zipStr))     formatErrors.push("Invalid ZIP code");
+    if (formatErrors.length > 0) {
+        return NextResponse.json({ error: formatErrors.join(". ") }, { status: 400 });
+    }
+
     // Consent fields are required server-side
     if (backgroundConsent !== true) {
         return NextResponse.json(
@@ -82,25 +97,47 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Invalid availability format" }, { status: 400 });
     }
 
+    // Check for an existing application by this email
+    const existing = await db.application.findFirst({
+        where: { email: emailStr },
+        select: { id: true, status: true },
+        orderBy: { appliedAt: "desc" },
+    });
+
+    if (existing) {
+        if (existing.status === "approved") {
+            return NextResponse.json({ error: "Your application has already been approved." }, { status: 409 });
+        }
+        if (existing.status === "pending") {
+            return NextResponse.json({ error: "You already have a pending application under review." }, { status: 409 });
+        }
+    }
+
+    const applicationData = {
+        firstName:       (firstName as string).trim(),
+        lastName:        (lastName as string).trim(),
+        email:           emailStr,
+        phone:           phoneStr,
+        street:          (street as string).trim(),
+        city:            (city as string).trim(),
+        state:           (state as string).trim(),
+        zip:             zipStr,
+        availableDays:   availability as string[],
+        skills:          (skills as string).trim(),
+        experience:      typeof experience === "string" && experience.trim() ? experience.trim() : null,
+        motivation:      (motivation as string).trim(),
+        backgroundCheck: true,
+        dataConsent:     true,
+        status:          "pending" as const,
+        appliedAt:       new Date(),
+    };
+
     try {
-        const application = await db.application.create({
-            data: {
-                firstName:         (firstName as string).trim(),
-                lastName:          (lastName as string).trim(),
-                email:             (email as string).trim(),
-                phone:             (phone as string).trim(),
-                street:            (street as string).trim(),
-                city:              (city as string).trim(),
-                state:             (state as string).trim(),
-                zip:               (zip as string).trim(),
-                availableDays:     availability as string[],
-                skills:            (skills as string).trim(),
-                experience:        typeof experience === "string" && experience.trim() ? experience.trim() : null,
-                motivation:        (motivation as string).trim(),
-                backgroundCheck:   true,
-                dataConsent:       true,
-            },
-        });
+        // If a denied application exists, update it back to pending with new data.
+        // Otherwise create a fresh application.
+        const application = existing
+            ? await db.application.update({ where: { id: existing.id }, data: applicationData })
+            : await db.application.create({ data: applicationData });
 
         return NextResponse.json({ data: application }, { status: 201 });
     } catch (err) {
