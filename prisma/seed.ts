@@ -24,6 +24,7 @@ import {
     SEED_EVENT_TITLES,
     SEED_APPLICATION_EMAILS,
     SEED_AUTH_IDS,
+    SEED_ACHIEVEMENT_NAMES,
 } from "./seed-identifiers";
 
 const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL! });
@@ -49,6 +50,16 @@ async function seed() {
     });
     const seedEventIds = existingSeedEvents.map((e) => e.id);
     const seedAuthIdValues = Object.values(SEED_AUTH_IDS);
+
+    // Remove seed user achievements before removing achievements/users
+    await db.userAchievement.deleteMany({
+        where: { userId: { in: seedAuthIdValues } },
+    });
+
+    // Remove seed achievements by name
+    await db.achievement.deleteMany({
+        where: { name: { in: SEED_ACHIEVEMENT_NAMES } },
+    });
 
     // Remove seed signups and hours (matched by placeholder user IDs or seed event IDs)
     await db.volunteerHours.deleteMany({
@@ -254,6 +265,62 @@ async function seed() {
     ]);
     const hours = await db.volunteerHours.createMany({ data: hoursData });
     console.log(`  Created ${hours.count} volunteer hours entries`);
+
+    // -- Achievements (default set that admins can award) --
+    console.log("Seeding achievements...");
+    const achievementsData = [
+        {
+            name: "First Event",
+            description: "Attended your first volunteer event.",
+            icon: "🌟",
+            criteria: "Complete 1 event",
+        },
+        {
+            name: "Event Veteran",
+            description: "Volunteered at 5 or more events.",
+            icon: "🎖️",
+            criteria: "Complete 5 events",
+        },
+        {
+            name: "Financial Literacy Champion",
+            description: "Taught financial literacy concepts to students.",
+            icon: "📚",
+            criteria: "Teach at least 1 financial literacy session",
+        },
+        {
+            name: "Hour Hero",
+            description: "Logged 20 or more volunteer hours.",
+            icon: "⏰",
+            criteria: "Accumulate 20 hours",
+        },
+        {
+            name: "Community Builder",
+            description: "Volunteered in 3 or more different cities.",
+            icon: "🏘️",
+            criteria: "Volunteer in 3 different cities",
+        },
+    ];
+    for (const data of achievementsData) {
+        await db.achievement.create({ data });
+    }
+    console.log(`  Created ${achievementsData.length} achievements`);
+
+    // -- Seed a sample UserAchievement for volunteer1 --
+    console.log("Seeding sample user achievements...");
+    const firstEventAch = await db.achievement.findUnique({
+        where: { name: "First Event" },
+    });
+    if (firstEventAch) {
+        await db.userAchievement.create({
+            data: {
+                userId:        SEED_AUTH_IDS.volunteer1,
+                userEmail:     "volunteer1@scecon.dev",
+                achievementId: firstEventAch.id,
+                awardedBy:     "admin@scecon.dev",
+            },
+        });
+        console.log("  Awarded 'First Event' to volunteer1@scecon.dev");
+    }
 
     // -- Applications (mix of statuses for testing the review workflow) --
     console.log("Seeding applications...");

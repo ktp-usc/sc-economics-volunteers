@@ -71,11 +71,11 @@ export default function Header(): React.JSX.Element {
             className="text-white shadow-lg sticky top-0 z-50 w-full overflow-hidden"
             style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}
         >
-            <div className="w-full mx-auto px-4 flex items-center justify-between h-[70px] min-w-0">
+            <div className="w-full mx-auto px-4 flex items-center justify-between h-17.5 min-w-0">
                 {/* Logo */}
                 <button onClick={() => navigate("/")} className="flex items-center gap-3 shrink-0">
                     <img
-                        src="/SC-Econ-logo.png"
+                        src="/SC-Econ-Logo-NoBlack.png"
                         alt="SC Economics"
                         className="h-12 w-auto"
                     />
@@ -100,7 +100,7 @@ export default function Header(): React.JSX.Element {
 
                     {/* Auth section — always reserve space so nav items don't shift
                         when the Login button appears after the /api/me fetch */}
-                    <div className="ml-3 pl-3 border-l border-white/30 flex items-center min-w-[80px] shrink-0">
+                    <div className="ml-3 pl-3 border-l border-white/30 flex items-center min-w-20 shrink-0">
                         {!isPending && (
                             isLoggedIn ? (
                                 <div className="flex items-center gap-2">

@@ -118,3 +118,25 @@ model Application {
   status          ApplicationStatus @default(pending)
   appliedAt       DateTime          @default(now())
 }
+
+model Achievement {
+  id          Int               @id @default(autoincrement())
+  name        String            @unique
+  description String
+  icon        String            // emoji or short string, e.g. "🏆"
+  criteria    String            // human-readable criteria description
+  createdAt   DateTime          @default(now())
+  awards      UserAchievement[]
+}
+
+model UserAchievement {
+  id            Int         @id @default(autoincrement())
+  userId        String      // Neon Auth user ID (same pattern as EventSignup.userId)
+  userEmail     String      // denormalized for display
+  achievementId Int
+  awardedAt     DateTime    @default(now())
+  awardedBy     String      // email of the admin who awarded it
+  achievement   Achievement @relation(fields: [achievementId], references: [id])
+
+  @@unique([userId, achievementId]) // prevent duplicate awards
+}

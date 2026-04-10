@@ -4,14 +4,14 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import {
     CheckCircle, XCircle, Users, Calendar, ClipboardList,
     ChevronDown, ChevronUp, Search, X, AlertCircle,
-    Mail, Phone, MapPin, Star, Clock, Plus, Trash2,
+    Mail, Phone, MapPin, Star, Clock, Plus, Trash2, Trophy,
 } from "lucide-react";
 import { useNavigate } from "@/context/navigation";
 
 // ─── Types (matching DB schema) ───────────────────────────────────────────────
 
 type AppStatus = "pending" | "approved" | "denied";
-type Tab = "applications" | "volunteers" | "events" | "hours";
+type Tab = "applications" | "volunteers" | "events" | "hours" | "achievements";
 
 interface Application {
     id: number;
@@ -51,6 +51,24 @@ interface HoursLog {
     hours: number;
     note: string | null;
     loggedAt: string;
+}
+
+interface Achievement {
+    id: number;
+    name: string;
+    description: string;
+    icon: string;
+    criteria: string;
+}
+
+interface UserAchievement {
+    id: number;
+    userId: string;
+    userEmail: string;
+    achievementId: number;
+    awardedAt: string;
+    awardedBy: string;
+    achievement: Achievement;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -106,9 +124,9 @@ function displayEnum(val: string) {
 // ─── CREATE EVENT MODAL ───────────────────────────────────────────────────────
 
 function CreateEventModal({
-    onClose,
-    onCreate,
-}: {
+                              onClose,
+                              onCreate,
+                          }: {
     onClose: () => void;
     onCreate: (event: AdminEvent) => void;
 }) {
@@ -261,11 +279,11 @@ function CreateEventModal({
 // ─── ADD HOURS MODAL ──────────────────────────────────────────────────────────
 
 function AddHoursModal({
-    volunteers,
-    events,
-    onAdd,
-    onClose,
-}: {
+                           volunteers,
+                           events,
+                           onAdd,
+                           onClose,
+                       }: {
     volunteers: { id: number; name: string; email: string }[];
     events: AdminEvent[];
     onAdd: (log: HoursLog) => void;
@@ -383,16 +401,139 @@ function AddHoursModal({
     );
 }
 
+// ─── AWARD ACHIEVEMENT MODAL ──────────────────────────────────────────────────
+
+function AwardAchievementModal({
+                                   volunteers,
+                                   achievements,
+                                   onClose,
+                                   onAward,
+                               }: {
+    volunteers: { id: number; name: string; email: string }[];
+    achievements: Achievement[];
+    onClose: () => void;
+    onAward: (award: UserAchievement) => void;
+}) {
+    const [volunteerEmail, setVolunteerEmail] = useState("");
+    const [achievementId,  setAchievementId]  = useState("");
+    const [error,          setError]          = useState("");
+    const [isSubmitting,   setIsSubmitting]   = useState(false);
+
+    const fieldCls = "w-full px-3.5 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-900 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition";
+
+    const handleSubmit = async () => {
+        setError("");
+        if (!volunteerEmail || !achievementId) {
+            setError("Please select a volunteer and an achievement.");
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            const res = await fetch("/api/achievements/award", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    userId:        volunteerEmail,
+                    userEmail:     volunteerEmail,
+                    achievementId: Number(achievementId),
+                }),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                setError(data.error ?? "Failed to award achievement.");
+                return;
+            }
+            onAward(await res.json());
+            onClose();
+        } catch {
+            setError("Failed to award achievement.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                    <div>
+                        <h3 className="font-bold text-[#1e3a5f] text-base">Award Achievement</h3>
+                        <p className="text-xs text-gray-500 mt-0.5">Recognize a volunteer&apos;s contribution</p>
+                    </div>
+                    <button onClick={onClose} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 transition">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
+
+                <div className="px-6 py-5 flex flex-col gap-4">
+                    {error && (
+                        <div className="px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-600 text-sm flex items-center gap-2">
+                            <AlertCircle className="w-4 h-4 shrink-0" /> {error}
+                        </div>
+                    )}
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Volunteer <span className="text-red-500">*</span></label>
+                        <select className={fieldCls} value={volunteerEmail} onChange={(e) => setVolunteerEmail(e.target.value)}>
+                            <option value="">Select a volunteer…</option>
+                            {volunteers.map((v) => (
+                                <option key={v.email} value={v.email}>{v.name} — {v.email}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-semibold text-gray-700 mb-1.5">Achievement <span className="text-red-500">*</span></label>
+                        <select className={fieldCls} value={achievementId} onChange={(e) => setAchievementId(e.target.value)}>
+                            <option value="">Select an achievement…</option>
+                            {achievements.map((a) => (
+                                <option key={a.id} value={String(a.id)}>{a.icon} {a.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    {/* Preview selected achievement */}
+                    {achievementId && (() => {
+                        const a = achievements.find((x) => x.id === Number(achievementId));
+                        if (!a) return null;
+                        return (
+                            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                                <span className="text-2xl shrink-0">{a.icon}</span>
+                                <div>
+                                    <p className="font-semibold text-amber-900 text-sm">{a.name}</p>
+                                    <p className="text-xs text-amber-700 mt-0.5">{a.description}</p>
+                                    <p className="text-[10px] text-amber-600 mt-1 italic">{a.criteria}</p>
+                                </div>
+                            </div>
+                        );
+                    })()}
+                </div>
+
+                <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-2">
+                    <button onClick={onClose} className="px-4 py-2 rounded-lg border border-gray-200 text-gray-600 text-sm font-medium hover:bg-gray-50 transition">Cancel</button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                        className="px-5 py-2 rounded-lg text-white text-sm font-bold transition hover:opacity-90 disabled:opacity-50"
+                        style={{ background: "linear-gradient(135deg, #003366, #1d4ed8)" }}
+                    >
+                        {isSubmitting ? "Awarding…" : "Award Achievement"}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
     const navigate = useNavigate();
 
-    const [isReady,      setIsReady]      = useState(false);
-    const [activeTab,    setActiveTab]    = useState<Tab>("applications");
-    const [applications, setApplications] = useState<Application[]>([]);
-    const [events,       setEvents]       = useState<AdminEvent[]>([]);
-    const [hoursLogs,    setHoursLogs]    = useState<HoursLog[]>([]);
+    const [isReady,          setIsReady]          = useState(false);
+    const [activeTab,        setActiveTab]        = useState<Tab>("applications");
+    const [applications,     setApplications]     = useState<Application[]>([]);
+    const [events,           setEvents]           = useState<AdminEvent[]>([]);
+    const [hoursLogs,        setHoursLogs]        = useState<HoursLog[]>([]);
+    const [achievements,     setAchievements]     = useState<Achievement[]>([]);
+    const [userAchievements, setUserAchievements] = useState<UserAchievement[]>([]);
 
     // Application tab UI state
     const [expandedApp,  setExpandedApp]  = useState<number | null>(null);
@@ -403,16 +544,20 @@ export default function AdminPage() {
     const [volunteerSearch, setVolunteerSearch] = useState("");
 
     // Events tab UI state
-    const [eventSearch,       setEventSearch]       = useState("");
-    const [expandedEvent,     setExpandedEvent]     = useState<number | null>(null);
-    const [showCreateEvent,   setShowCreateEvent]   = useState(false);
+    const [eventSearch,        setEventSearch]        = useState("");
+    const [expandedEvent,      setExpandedEvent]      = useState<number | null>(null);
+    const [showCreateEvent,    setShowCreateEvent]    = useState(false);
     const [confirmDeleteEvent, setConfirmDeleteEvent] = useState<number | null>(null);
 
     // Hours tab UI state
-    const [hoursSearch,       setHoursSearch]       = useState("");
-    const [hoursEmailFilter,  setHoursEmailFilter]  = useState<string | "all">("all");
-    const [showAddHours,      setShowAddHours]       = useState(false);
+    const [hoursSearch,        setHoursSearch]        = useState("");
+    const [hoursEmailFilter,   setHoursEmailFilter]   = useState<string | "all">("all");
+    const [showAddHours,       setShowAddHours]       = useState(false);
     const [confirmDeleteHours, setConfirmDeleteHours] = useState<number | null>(null);
+
+    // Achievements tab UI state
+    const [achSearch,        setAchSearch]        = useState("");
+    const [showAwardModal,   setShowAwardModal]   = useState(false);
 
     // ── Auth check + initial data load ────────────────────────────────────────
     useEffect(() => {
@@ -422,21 +567,27 @@ export default function AdminPage() {
             const me = await meRes.json();
             if (me.role !== "admin") { navigate("/login"); return; }
 
-            const [appsRes, eventsRes, hoursRes] = await Promise.all([
+            const [appsRes, eventsRes, hoursRes, achRes, userAchRes] = await Promise.all([
                 fetch("/api/applications"),
                 fetch("/api/events"),
                 fetch("/api/volunteers/hours"),
+                fetch("/api/achievements"),
+                fetch("/api/achievements/awarded"),
             ]);
 
-            const [apps, evts, hours] = await Promise.all([
-                appsRes.ok   ? appsRes.json()   : [],
-                eventsRes.ok ? eventsRes.json()  : [],
-                hoursRes.ok  ? hoursRes.json()   : [],
+            const [apps, evts, hours, ach, userAch] = await Promise.all([
+                appsRes.ok    ? appsRes.json()    : [],
+                eventsRes.ok  ? eventsRes.json()  : [],
+                hoursRes.ok   ? hoursRes.json()   : [],
+                achRes.ok     ? achRes.json()     : [],
+                userAchRes.ok ? userAchRes.json() : [],
             ]);
 
             setApplications(apps);
             setEvents(evts);
             setHoursLogs(hours);
+            setAchievements(ach);
+            setUserAchievements(userAch);
             setIsReady(true);
         }
         init().catch(() => navigate("/login"));
@@ -505,6 +656,12 @@ export default function AdminPage() {
         }
     }, []);
 
+    // ── Achievement actions ───────────────────────────────────────────────────
+
+    const handleAward = useCallback((award: UserAchievement) => {
+        setUserAchievements((prev) => [award, ...prev]);
+    }, []);
+
     // ── Filtered data ─────────────────────────────────────────────────────────
 
     const filteredApps = applications.filter((a) => {
@@ -529,6 +686,11 @@ export default function AdminPage() {
         const matchVol = hoursEmailFilter === "all" || h.userEmail === hoursEmailFilter;
         return matchSearch && matchVol;
     });
+
+    const filteredUserAchievements = userAchievements.filter((ua) =>
+        `${ua.userEmail} ${ua.achievement.name} ${ua.awardedBy}`
+            .toLowerCase().includes(achSearch.toLowerCase())
+    );
 
     const hoursByEmail = hoursLogs.reduce<Record<string, { name: string; total: number }>>((acc, h) => {
         const key  = h.userEmail;
@@ -565,18 +727,18 @@ export default function AdminPage() {
             <div className="text-white py-8 px-4" style={{ background: "linear-gradient(135deg, #003366 0%, #1d4ed8 100%)" }}>
                 <div className="max-w-6xl mx-auto">
                     <h1 className="text-3xl font-bold mb-1">Admin Dashboard</h1>
-                    <p className="text-blue-200">Manage applications, volunteers, events, and hours</p>
+                    <p className="text-blue-200">Manage applications, volunteers, events, hours, and achievements</p>
                 </div>
             </div>
 
             {/* Stats */}
             <div className="max-w-6xl mx-auto px-4 -mt-4">
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     {[
-                        { label: "Pending Applications", value: pendingCount, icon: <ClipboardList className="w-5 h-5" />, color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200" },
-                        { label: "Active Volunteers",    value: volunteers.length, icon: <Users className="w-5 h-5" />, color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
-                        { label: "Upcoming Events",      value: events.length, icon: <Calendar className="w-5 h-5" />, color: "text-green-700", bg: "bg-green-50 border-green-200" },
-                        { label: "Total Hours Logged",   value: `${hoursLogs.reduce((s, h) => s + h.hours, 0)}h`, icon: <Clock className="w-5 h-5" />, color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
+                        { label: "Pending Applications", value: pendingCount,                                                         icon: <ClipboardList className="w-5 h-5" />, color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200" },
+                        { label: "Active Volunteers",    value: volunteers.length,                                                     icon: <Users className="w-5 h-5" />,        color: "text-blue-700",   bg: "bg-blue-50 border-blue-200"   },
+                        { label: "Upcoming Events",      value: events.length,                                                         icon: <Calendar className="w-5 h-5" />,     color: "text-green-700",  bg: "bg-green-50 border-green-200" },
+                        { label: "Total Hours Logged",   value: `${hoursLogs.reduce((s, h) => s + h.hours, 0)}h`,                     icon: <Clock className="w-5 h-5" />,        color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
                     ].map((s) => (
                         <div key={s.label} className={`bg-white rounded-xl border ${s.bg} shadow-sm px-5 py-4 flex items-center gap-4`}>
                             <div className={s.color}>{s.icon}</div>
@@ -591,12 +753,13 @@ export default function AdminPage() {
 
             {/* Tabs */}
             <div className="max-w-6xl mx-auto px-4 mt-6">
-                <div className="flex gap-1 bg-white rounded-xl border border-gray-200 shadow-sm p-1 w-fit">
+                <div className="flex gap-1 bg-white rounded-xl border border-gray-200 shadow-sm p-1 w-fit flex-wrap">
                     {([
                         { key: "applications", label: "Applications", icon: <ClipboardList className="w-4 h-4" /> },
                         { key: "volunteers",   label: "Volunteers",   icon: <Users className="w-4 h-4" /> },
                         { key: "events",       label: "Events",       icon: <Calendar className="w-4 h-4" /> },
                         { key: "hours",        label: "Hours",        icon: <Clock className="w-4 h-4" /> },
+                        { key: "achievements", label: "Achievements", icon: <Trophy className="w-4 h-4" /> },
                     ] as { key: Tab; label: string; icon: React.ReactNode }[]).map((t) => (
                         <button
                             key={t.key}
@@ -739,6 +902,7 @@ export default function AdminPage() {
                                 const totalHours = hoursLogs
                                     .filter((h) => h.userEmail === vol.email)
                                     .reduce((s, h) => s + h.hours, 0);
+                                const volAchievements = userAchievements.filter((ua) => ua.userEmail === vol.email);
                                 return (
                                     <div key={vol.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex flex-col gap-3">
                                         <div className="flex items-start gap-3">
@@ -759,12 +923,34 @@ export default function AdminPage() {
                                             <span className="flex items-center gap-1.5"><MapPin className="w-3 h-3" />{vol.city}</span>
                                             <span className="flex items-center gap-1.5"><Star className="w-3 h-3" />{vol.skills}</span>
                                         </div>
-                                        <button
-                                            onClick={() => { setActiveTab("hours"); setHoursEmailFilter(vol.email); }}
-                                            className="flex items-center justify-center gap-1.5 py-2 rounded-lg border border-purple-300 text-purple-700 text-xs font-semibold hover:bg-purple-50 transition"
-                                        >
-                                            <Clock className="w-3.5 h-3.5" /> View Hours
-                                        </button>
+                                        {/* Badges earned */}
+                                        {volAchievements.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {volAchievements.map((ua) => (
+                                                    <span
+                                                        key={ua.id}
+                                                        title={ua.achievement.name}
+                                                        className="text-base"
+                                                    >
+                                                        {ua.achievement.icon}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => { setActiveTab("hours"); setHoursEmailFilter(vol.email); }}
+                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-purple-300 text-purple-700 text-xs font-semibold hover:bg-purple-50 transition"
+                                            >
+                                                <Clock className="w-3.5 h-3.5" /> View Hours
+                                            </button>
+                                            <button
+                                                onClick={() => { setActiveTab("achievements"); setAchSearch(vol.email); }}
+                                                className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border border-amber-300 text-amber-700 text-xs font-semibold hover:bg-amber-50 transition"
+                                            >
+                                                <Trophy className="w-3.5 h-3.5" /> Achievements
+                                            </button>
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -939,56 +1125,163 @@ export default function AdminPage() {
                             ) : (
                                 <table className="w-full text-sm">
                                     <thead>
-                                        <tr className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wider">
-                                            <th className="px-5 py-3 text-left">Volunteer</th>
-                                            <th className="px-5 py-3 text-left">Event</th>
-                                            <th className="px-5 py-3 text-left">Hours</th>
-                                            <th className="px-5 py-3 text-left">Note</th>
-                                            <th className="px-5 py-3 text-left">Date</th>
-                                            <th className="px-5 py-3" />
-                                        </tr>
+                                    <tr className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                                        <th className="px-5 py-3 text-left">Volunteer</th>
+                                        <th className="px-5 py-3 text-left">Event</th>
+                                        <th className="px-5 py-3 text-left">Hours</th>
+                                        <th className="px-5 py-3 text-left">Note</th>
+                                        <th className="px-5 py-3 text-left">Date</th>
+                                        <th className="px-5 py-3" />
+                                    </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
-                                        {filteredHours.map((h) => {
-                                            const name = emailToName[h.userEmail] ?? h.userEmail;
+                                    {filteredHours.map((h) => {
+                                        const name = emailToName[h.userEmail] ?? h.userEmail;
+                                        return (
+                                            <tr key={h.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-5 py-3.5">
+                                                    <div className="font-medium text-gray-900">{name}</div>
+                                                    <div className="text-xs text-gray-400">{h.userEmail}</div>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-gray-700 max-w-50 truncate">
+                                                    {h.event?.title ?? `Event #${h.eventId}`}
+                                                </td>
+                                                <td className="px-5 py-3.5">
+                                                    <span className="font-bold text-[#003366]">{h.hours}h</span>
+                                                </td>
+                                                <td className="px-5 py-3.5 text-gray-500 italic text-xs">{h.note ?? "—"}</td>
+                                                <td className="px-5 py-3.5 text-gray-500 text-xs">
+                                                    {new Date(h.loggedAt).toLocaleDateString()}
+                                                </td>
+                                                <td className="px-5 py-3.5 text-right">
+                                                    {confirmDeleteHours === h.id ? (
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <span className="text-xs text-gray-500">Delete?</span>
+                                                            <button onClick={() => handleDeleteHours(h.id)} className="text-xs text-red-600 font-bold hover:text-red-800 transition">Yes</button>
+                                                            <button onClick={() => setConfirmDeleteHours(null)} className="text-xs text-gray-500 hover:text-gray-700 transition">No</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => setConfirmDeleteHours(h.id)}
+                                                            className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                {/* ── ACHIEVEMENTS ── */}
+                {activeTab === "achievements" && (
+                    <div className="flex flex-col gap-8">
+
+                        {/* Achievement definitions */}
+                        <div>
+                            <h2 className="text-base font-bold text-[#1e3a5f] mb-3">Available Achievements</h2>
+                            {achievements.length === 0 ? (
+                                <div className="text-center py-10 bg-white rounded-xl border border-gray-200 text-gray-400 text-sm">
+                                    No achievements defined yet. Add some via the seed file or a future create form.
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {achievements.map((a) => {
+                                        const awardedCount = userAchievements.filter((ua) => ua.achievementId === a.id).length;
+                                        return (
+                                            <div key={a.id} className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-start gap-4">
+                                                <span className="text-3xl shrink-0">{a.icon}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-[#1e3a5f]">{a.name}</p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{a.description}</p>
+                                                    <p className="text-[10px] text-gray-400 mt-1 italic">{a.criteria}</p>
+                                                    <p className="text-[10px] text-blue-600 font-semibold mt-2">
+                                                        Awarded to {awardedCount} volunteer{awardedCount !== 1 ? "s" : ""}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Awarded log */}
+                        <div>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                                <h2 className="text-base font-bold text-[#1e3a5f]">Awarded to Volunteers</h2>
+                                <div className="flex gap-3">
+                                    <div className="relative">
+                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                        <input
+                                            className="pl-9 pr-3.5 py-2.5 rounded-lg border border-gray-200 bg-white text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition w-64"
+                                            placeholder="Search volunteer or achievement…"
+                                            value={achSearch}
+                                            onChange={(e) => setAchSearch(e.target.value)}
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={() => setShowAwardModal(true)}
+                                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white text-sm font-bold transition hover:opacity-90 shrink-0"
+                                        style={{ background: "linear-gradient(135deg, #003366, #1d4ed8)" }}
+                                    >
+                                        <Plus className="w-4 h-4" /> Award Achievement
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                                {filteredUserAchievements.length === 0 ? (
+                                    <div className="text-center py-16 text-gray-400 text-sm">
+                                        {userAchievements.length === 0
+                                            ? "No achievements awarded yet. Click \"Award Achievement\" to get started."
+                                            : "No results match your search."}
+                                    </div>
+                                ) : (
+                                    <table className="w-full text-sm">
+                                        <thead>
+                                        <tr className="border-b border-gray-100 bg-gray-50 text-xs text-gray-500 font-semibold uppercase tracking-wider">
+                                            <th className="px-5 py-3 text-left">Volunteer</th>
+                                            <th className="px-5 py-3 text-left">Achievement</th>
+                                            <th className="px-5 py-3 text-left">Awarded By</th>
+                                            <th className="px-5 py-3 text-left">Date</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-50">
+                                        {filteredUserAchievements.map((ua) => {
+                                            const name = emailToName[ua.userEmail] ?? ua.userEmail;
                                             return (
-                                                <tr key={h.id} className="hover:bg-gray-50 transition-colors">
+                                                <tr key={ua.id} className="hover:bg-gray-50 transition-colors">
                                                     <td className="px-5 py-3.5">
                                                         <div className="font-medium text-gray-900">{name}</div>
-                                                        <div className="text-xs text-gray-400">{h.userEmail}</div>
-                                                    </td>
-                                                    <td className="px-5 py-3.5 text-gray-700 max-w-[200px] truncate">
-                                                        {h.event?.title ?? `Event #${h.eventId}`}
+                                                        <div className="text-xs text-gray-400">{ua.userEmail}</div>
                                                     </td>
                                                     <td className="px-5 py-3.5">
-                                                        <span className="font-bold text-[#003366]">{h.hours}h</span>
-                                                    </td>
-                                                    <td className="px-5 py-3.5 text-gray-500 italic text-xs">{h.note ?? "—"}</td>
-                                                    <td className="px-5 py-3.5 text-gray-500 text-xs">
-                                                        {new Date(h.loggedAt).toLocaleDateString()}
-                                                    </td>
-                                                    <td className="px-5 py-3.5 text-right">
-                                                        {confirmDeleteHours === h.id ? (
-                                                            <div className="flex items-center justify-end gap-2">
-                                                                <span className="text-xs text-gray-500">Delete?</span>
-                                                                <button onClick={() => handleDeleteHours(h.id)} className="text-xs text-red-600 font-bold hover:text-red-800 transition">Yes</button>
-                                                                <button onClick={() => setConfirmDeleteHours(null)} className="text-xs text-gray-500 hover:text-gray-700 transition">No</button>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-lg">{ua.achievement.icon}</span>
+                                                            <div>
+                                                                <div className="font-medium text-gray-900">{ua.achievement.name}</div>
+                                                                <div className="text-xs text-gray-400">{ua.achievement.description}</div>
                                                             </div>
-                                                        ) : (
-                                                            <button
-                                                                onClick={() => setConfirmDeleteHours(h.id)}
-                                                                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition"
-                                                            >
-                                                                <Trash2 className="w-3.5 h-3.5" />
-                                                            </button>
-                                                        )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-5 py-3.5 text-gray-500 text-xs">{ua.awardedBy}</td>
+                                                    <td className="px-5 py-3.5 text-gray-500 text-xs">
+                                                        {new Date(ua.awardedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                                                     </td>
                                                 </tr>
                                             );
                                         })}
-                                    </tbody>
-                                </table>
-                            )}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
@@ -1007,6 +1300,14 @@ export default function AdminPage() {
                     events={events}
                     onAdd={handleAddHours}
                     onClose={() => setShowAddHours(false)}
+                />
+            )}
+            {showAwardModal && (
+                <AwardAchievementModal
+                    volunteers={volunteers}
+                    achievements={achievements}
+                    onClose={() => setShowAwardModal(false)}
+                    onAward={handleAward}
                 />
             )}
         </div>

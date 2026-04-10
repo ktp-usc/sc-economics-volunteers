@@ -38,3 +38,11 @@ export const SEED_AUTH_IDS = {
     volunteer1: "00000000-0000-4000-a000-000000000001",
     volunteer2: "00000000-0000-4000-a000-000000000002",
 };
+// Names used to identify seed Achievement records
+export const SEED_ACHIEVEMENT_NAMES = [
+    "First Event",
+    "Event Veteran",
+    "Financial Literacy Champion",
+    "Hour Hero",
+    "Community Builder",
+];
