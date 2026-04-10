@@ -4,8 +4,8 @@ import { getAuthenticatedAdmin } from "@/lib/auth";
 
 /**
  * DELETE /api/admins/[id]
- * Admin only — removes admin privileges (deletes Prisma User record).
- * The Neon Auth account remains; the user simply loses admin access.
+ * Admin only — revokes staff privileges by setting the user's role back to
+ * "volunteer". The Prisma User record and Neon Auth account are preserved.
  */
 export async function DELETE(
     _req: NextRequest,
@@ -13,7 +13,7 @@ export async function DELETE(
 ) {
     const admin = await getAuthenticatedAdmin();
     if (!admin) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const { id } = await params;
@@ -22,15 +22,18 @@ export async function DELETE(
         return NextResponse.json({ error: "Invalid id." }, { status: 400 });
     }
 
-    // Prevent self-deletion
+    // Prevent revoking your own access
     if (numericId === admin.id) {
-        return NextResponse.json({ error: "Cannot remove your own admin account." }, { status: 400 });
+        return NextResponse.json({ error: "You cannot revoke your own staff access." }, { status: 400 });
     }
 
     try {
-        await db.user.delete({ where: { id: numericId } });
-        return NextResponse.json({ message: "Admin account removed." }, { status: 200 });
+        await db.user.update({
+            where: { id: numericId },
+            data: { role: "volunteer" },
+        });
+        return NextResponse.json({ message: "Staff access revoked." }, { status: 200 });
     } catch {
-        return NextResponse.json({ error: "Admin account not found." }, { status: 404 });
+        return NextResponse.json({ error: "Account not found." }, { status: 404 });
     }
 }

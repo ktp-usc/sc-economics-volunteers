@@ -17,8 +17,17 @@ export async function GET() {
     const user = session.user as { email?: string; name?: string };
     const email = user.email ?? "";
 
-    const prismaUser = await db.user.findUnique({ where: { email } });
+    const [prismaUser, application] = await Promise.all([
+        db.user.findUnique({ where: { email } }),
+        db.application.findFirst({ where: { email }, select: { id: true, status: true }, orderBy: { appliedAt: "desc" } }),
+    ]);
     const role = prismaUser?.role ?? "volunteer";
 
-    return NextResponse.json({ email, name: user.name ?? null, role });
+    return NextResponse.json({
+        email,
+        name: user.name ?? null,
+        role,
+        hasApplication: !!application,
+        applicationStatus: application?.status ?? null,
+    });
 }
