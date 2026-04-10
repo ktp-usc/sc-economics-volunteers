@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     CheckCircle, XCircle, Users, Calendar, ClipboardList,
     ChevronDown, ChevronUp, Search, X, UserCheck, AlertCircle,
     Mail, Phone, MapPin, Star, Clock, Plus, Trash2,
 } from "lucide-react";
+import {
+    SkeletonAdminStatCards,
+    SkeletonApplicationRow,
+    SkeletonVolunteerCard,
+    SkeletonAdminEventCard,
+    SkeletonHoursTable,
+} from "@/components/skeletons";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -193,6 +200,7 @@ function AddHoursModal({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminPage() {
+    const [isLoading, setIsLoading] = useState(true);
     const [activeTab, setActiveTab]     = useState<Tab>("applications");
     const [applications, setApplications] = useState(INITIAL_APPLICATIONS);
     const [volunteers, setVolunteers]   = useState(INITIAL_VOLUNTEERS);
@@ -214,6 +222,12 @@ export default function AdminPage() {
     const [hoursVolFilter, setHoursVolFilter] = useState<number | "all">("all");
     const [showAddHours, setShowAddHours]     = useState(false);
     const [confirmDeleteHours, setConfirmDeleteHours] = useState<number | null>(null);
+
+    // TODO: replace this fake delay with a real fetch once the API is ready
+    useEffect(() => {
+        const t = setTimeout(() => setIsLoading(false), 700);
+        return () => clearTimeout(t);
+    }, []);
 
     // ── Application actions ──────────────────────────────────────────────────
 
@@ -249,13 +263,13 @@ export default function AdminPage() {
 
     const handleAddHours = (log: Omit<HoursLog, "id">) => {
         setHoursLogs((prev) => [{ ...log, id: Date.now() }, ...prev]);
-        // TODO: POST /api/volunteers/hours
+        // TODO: hit POST /api/volunteers/hours once the endpoint exists
     };
 
     const handleDeleteHours = (id: number) => {
         setHoursLogs((prev) => prev.filter((h) => h.id !== id));
         setConfirmDeleteHours(null);
-        // TODO: DELETE /api/volunteers/hours?id=...
+        // TODO: hit DELETE /api/volunteers/hours?id=... once the endpoint exists
     };
 
     // ── Derived ──────────────────────────────────────────────────────────────
@@ -280,7 +294,7 @@ export default function AdminPage() {
         return matchSearch && matchVol;
     });
 
-    // Per-volunteer totals for the summary row
+    // tally up hours per volunteer for the summary strip
     const hoursByVolunteer = hoursLogs.reduce<Record<number, { name: string; total: number }>>((acc, h) => {
         if (!acc[h.volunteerId]) acc[h.volunteerId] = { name: h.volunteerName, total: 0 };
         acc[h.volunteerId].total += h.hours;
@@ -304,22 +318,26 @@ export default function AdminPage() {
 
             {/* Stats */}
             <div className="max-w-6xl mx-auto px-4 -mt-4">
-                <div className="grid grid-cols-4 gap-4">
-                    {[
-                        { label: "Pending Applications", value: pendingCount, icon: <ClipboardList className="w-5 h-5" />, color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200" },
-                        { label: "Active Volunteers",    value: volunteers.length, icon: <Users className="w-5 h-5" />, color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
-                        { label: "Upcoming Events",      value: events.length, icon: <Calendar className="w-5 h-5" />, color: "text-green-700", bg: "bg-green-50 border-green-200" },
-                        { label: "Total Hours Logged",   value: hoursLogs.reduce((s, h) => s + h.hours, 0) + "h", icon: <Clock className="w-5 h-5" />, color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
-                    ].map((s) => (
-                        <div key={s.label} className={`bg-white rounded-xl border ${s.bg} shadow-sm px-5 py-4 flex items-center gap-4`}>
-                            <div className={s.color}>{s.icon}</div>
-                            <div>
-                                <p className="text-2xl font-bold text-gray-900">{s.value}</p>
-                                <p className="text-xs text-gray-500">{s.label}</p>
+                {isLoading ? (
+                    <SkeletonAdminStatCards />
+                ) : (
+                    <div className="grid grid-cols-4 gap-4">
+                        {[
+                            { label: "Pending Applications", value: pendingCount, icon: <ClipboardList className="w-5 h-5" />, color: "text-yellow-600", bg: "bg-yellow-50 border-yellow-200" },
+                            { label: "Active Volunteers",    value: volunteers.length, icon: <Users className="w-5 h-5" />, color: "text-blue-700", bg: "bg-blue-50 border-blue-200" },
+                            { label: "Upcoming Events",      value: events.length, icon: <Calendar className="w-5 h-5" />, color: "text-green-700", bg: "bg-green-50 border-green-200" },
+                            { label: "Total Hours Logged",   value: hoursLogs.reduce((s, h) => s + h.hours, 0) + "h", icon: <Clock className="w-5 h-5" />, color: "text-purple-700", bg: "bg-purple-50 border-purple-200" },
+                        ].map((s) => (
+                            <div key={s.label} className={`bg-white rounded-xl border ${s.bg} shadow-sm px-5 py-4 flex items-center gap-4`}>
+                                <div className={s.color}>{s.icon}</div>
+                                <div>
+                                    <p className="text-2xl font-bold text-gray-900">{s.value}</p>
+                                    <p className="text-xs text-gray-500">{s.label}</p>
+                                </div>
                             </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Tabs */}
@@ -348,8 +366,26 @@ export default function AdminPage() {
             {/* Content */}
             <div className="max-w-6xl mx-auto px-4 py-6">
 
+                {/* ── SKELETON TAB CONTENT ── */}
+                {isLoading && activeTab === "applications" && (
+                    <div className="flex flex-col gap-3">
+                        {[0, 1, 2, 3, 4].map((i) => <SkeletonApplicationRow key={i} />)}
+                    </div>
+                )}
+                {isLoading && activeTab === "volunteers" && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[0, 1, 2, 3].map((i) => <SkeletonVolunteerCard key={i} />)}
+                    </div>
+                )}
+                {isLoading && activeTab === "events" && (
+                    <div className="flex flex-col gap-4">
+                        {[0, 1, 2].map((i) => <SkeletonAdminEventCard key={i} />)}
+                    </div>
+                )}
+                {isLoading && activeTab === "hours" && <SkeletonHoursTable />}
+
                 {/* ── APPLICATIONS ── */}
-                {activeTab === "applications" && (
+                {!isLoading && activeTab === "applications" && (
                     <div>
                         <div className="flex flex-col sm:flex-row gap-3 mb-5">
                             <div className="relative flex-1">
@@ -411,7 +447,7 @@ export default function AdminPage() {
                 )}
 
                 {/* ── VOLUNTEERS ── */}
-                {activeTab === "volunteers" && (
+                {!isLoading && activeTab === "volunteers" && (
                     <div>
                         <div className="relative mb-5">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -466,7 +502,7 @@ export default function AdminPage() {
                 )}
 
                 {/* ── EVENTS ── */}
-                {activeTab === "events" && (
+                {!isLoading && activeTab === "events" && (
                     <div>
                         <div className="relative mb-5">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -531,7 +567,7 @@ export default function AdminPage() {
                 )}
 
                 {/* ── HOURS ── */}
-                {activeTab === "hours" && (
+                {!isLoading && activeTab === "hours" && (
                     <div>
                         {/* Toolbar */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">

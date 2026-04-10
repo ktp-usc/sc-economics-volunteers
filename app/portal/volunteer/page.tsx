@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Clock,
     CalendarCheck,
@@ -13,6 +13,7 @@ import {
     User,
     Bell,
 } from "lucide-react";
+import { SkeletonVolunteerPortal } from "@/components/skeletons";
 
 // ─── Mock Data ───────────────────────────────────────────────────────────────
 
@@ -252,10 +253,19 @@ function EventRow({ event }: { event: VolEvent }) {
 // ─── Page ────────────────────────────────────────────────────────────────────
 
 export default function VolunteerPortalPage() {
+    const [isLoading, setIsLoading] = useState(true);
     const [filter, setFilter] = useState<FilterType>("all");
     const [activeTab, setActiveTab] = useState<"overview" | "events" | "badges">("overview");
 
+    // TODO: replace this fake delay with a real fetch once the API is ready
+    useEffect(() => {
+        const t = setTimeout(() => setIsLoading(false), 700);
+        return () => clearTimeout(t);
+    }, []);
+
     const filtered = events.filter((e) => (filter === "all" ? true : e.status === filter));
+
+    if (isLoading) return <SkeletonVolunteerPortal />;
 
     const completedEvents = events.filter((e) => e.status === "completed");
     const upcomingEvents = events.filter((e) => e.status === "upcoming");

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { MapPin, Calendar, Users, X, CheckCircle } from "lucide-react";
+import { SkeletonEventCard } from "@/components/skeletons";
 import { useEventsStore } from "@/lib/stores/events";
 import {
     VolunteerEvent, EventType, AgeGroup, Expertise, City, formatDate,
@@ -48,7 +49,7 @@ const selectCls =
 // ── Page ───────────────────────────────────────────────────────────────────
 
 export default function EventsPage() {
-    // Prevent SSR/localStorage hydration mismatch
+    // wait for client mount before reading the events store to avoid hydration mismatches
     const [mounted, setMounted] = useState<boolean>(false);
     // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => setMounted(true), []);
@@ -105,27 +106,46 @@ export default function EventsPage() {
                         </p>
                     </div>
                     <div className="hidden md:flex gap-6 text-center shrink-0">
-                        <div>
-                            <div className="text-2xl font-bold">{mounted ? events.length : "—"}</div>
-                            <div className="text-blue-200 text-xs uppercase tracking-wide mt-0.5">Total Events</div>
-                        </div>
-                        <div className="w-px bg-white/20" />
-                        <div>
-                            <div className="text-2xl font-bold">{mounted ? openCount : "—"}</div>
-                            <div className="text-blue-200 text-xs uppercase tracking-wide mt-0.5">Open</div>
-                        </div>
-                        <div className="w-px bg-white/20" />
-                        <div>
-                            <div className="text-2xl font-bold">{mounted ? spotsLeft : "—"}</div>
-                            <div className="text-blue-200 text-xs uppercase tracking-wide mt-0.5">Spots Left</div>
-                        </div>
+                        {mounted ? (
+                            <>
+                                <div>
+                                    <div className="text-2xl font-bold">{events.length}</div>
+                                    <div className="text-blue-200 text-xs uppercase tracking-wide mt-0.5">Total Events</div>
+                                </div>
+                                <div className="w-px bg-white/20" />
+                                <div>
+                                    <div className="text-2xl font-bold">{openCount}</div>
+                                    <div className="text-blue-200 text-xs uppercase tracking-wide mt-0.5">Open</div>
+                                </div>
+                                <div className="w-px bg-white/20" />
+                                <div>
+                                    <div className="text-2xl font-bold">{spotsLeft}</div>
+                                    <div className="text-blue-200 text-xs uppercase tracking-wide mt-0.5">Spots Left</div>
+                                </div>
+                            </>
+                        ) : (
+                            <>
+                                <div className="h-8 w-12 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.2)" }} />
+                                <div className="w-px bg-white/20" />
+                                <div className="h-8 w-10 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.2)" }} />
+                                <div className="w-px bg-white/20" />
+                                <div className="h-8 w-10 rounded-md animate-pulse" style={{ backgroundColor: "rgba(255,255,255,0.2)" }} />
+                            </>
+                        )}
                     </div>
                 </div>
             </div>
 
             <div className="max-w-6xl mx-auto px-4 py-8">
 
-                {/* ── No events at all ──────────────────────────────────── */}
+                {/* show skeleton cards until the client hydrates */}
+                {!mounted && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {[0, 1, 2, 3, 4, 5].map((i) => <SkeletonEventCard key={i} />)}
+                    </div>
+                )}
+
+                {/* empty state when there are no events yet */}
                 {mounted && events.length === 0 ? (
                     <div className="text-center py-24 text-gray-400">
                         <div className="text-5xl mb-4">📅</div>
@@ -134,7 +154,7 @@ export default function EventsPage() {
                     </div>
                 ) : (
                     <>
-                        {/* ── Filter bar ────────────────────────────────── */}
+                        {/* filter controls */}
                         <div className="bg-white rounded-xl shadow-sm p-5 mb-8 flex flex-wrap gap-4 items-end">
                             <div>
                                 <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
@@ -197,7 +217,7 @@ export default function EventsPage() {
                             </p>
                         </div>
 
-                        {/* ── Success toast ─────────────────────────────── */}
+                        {/* brief success message after signing up */}
                         {justConfirmed && (
                             <div className="mb-6 flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl px-5 py-3 text-green-800 text-sm font-medium shadow-sm">
                                 <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
@@ -205,7 +225,7 @@ export default function EventsPage() {
                             </div>
                         )}
 
-                        {/* ── Event grid ────────────────────────────────── */}
+                        {/* event grid, or empty state if filters return nothing */}
                         {filtered.length === 0 ? (
                             <div className="text-center py-24 text-gray-400">
                                 <div className="text-5xl mb-4">🔍</div>
@@ -308,7 +328,7 @@ export default function EventsPage() {
                 )}
             </div>
 
-            {/* ── Sign-up modal ──────────────────────────────────────────── */}
+            {/* sign-up confirmation modal */}
             {signUpEvent && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
