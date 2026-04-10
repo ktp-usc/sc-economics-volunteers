@@ -10,16 +10,27 @@ interface Me {
     email: string;
     name: string | null;
     role: string;
+    hasApplication: boolean;
 }
 
-const VOLUNTEER_NAV = [
+const VOLUNTEER_NAV_APPLY = [
     { label: "Home",             href: "/" },
     { label: "Apply",            href: "/volunteer" },
     { label: "Events",           href: "/events" },
     { label: "Volunteer Portal", href: "/portal" },
 ];
 
-const ADMIN_EXTRA = { label: "Admin", href: "/admin" };
+const VOLUNTEER_NAV = [
+    { label: "Home",             href: "/" },
+    { label: "Events",           href: "/events" },
+    { label: "Volunteer Portal", href: "/portal" },
+];
+
+const STAFF_NAV = [
+    { label: "Home",   href: "/" },
+    { label: "Events", href: "/events" },
+    { label: "Admin",  href: "/admin" },
+];
 
 // When not logged in, Apply points directly to /login (auth required to apply).
 // This prevents the /volunteer → /login → /volunteer redirect loop that causes
@@ -50,13 +61,13 @@ export default function Header(): React.JSX.Element {
     const isLoggedIn = !!me;
     const role = me?.role ?? null;
 
-    // Admins and managers both get the Admin nav link since they share
-    // access to event management, applications, and volunteer hours.
     const isStaff = role === "admin" || role === "manager";
+    const hasApplied = me?.hasApplication ?? false;
+    const volunteerNav = hasApplied ? VOLUNTEER_NAV : VOLUNTEER_NAV_APPLY;
     const navItems = isLoggedIn
         ? isStaff
-            ? [...VOLUNTEER_NAV, ADMIN_EXTRA]
-            : VOLUNTEER_NAV
+            ? STAFF_NAV
+            : volunteerNav
         : PUBLIC_NAV;
 
     const handleSignOut = async () => {
